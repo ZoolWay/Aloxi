@@ -1,8 +1,8 @@
 # app-specific config files and certs
-./config/aws-iot.json
-./config/*.pem
-./config/*.crt
-./config/*.key
+config/aws-iot.json
+config/*.pem
+config/*.crt
+config/*.key
 
 
 
