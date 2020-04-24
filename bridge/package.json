@@ -1,0 +1,34 @@
+{
+  "name": "bridge",
+  "version": "1.0.0",
+  "description": "Aloxi Bridging application, runs in the Loxone miniserver-connected network",
+  "main": "./dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "tsc": "tsc",
+    "prepare": "npm run tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZoolWay/Aloxi.git"
+  },
+  "keywords": [
+    "loxone",
+    "alexa",
+    "alexa-smart-home"
+  ],
+  "author": "ZoolWay",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ZoolWay/Aloxi/issues"
+  },
+  "homepage": "https://github.com/ZoolWay/Aloxi#readme",
+  "devDependencies": {
+    "@types/node": "^10.12.18",
+    "typescript": "^3.8.3"
+  },
+  "dependencies": {
+    "aws-crt": "^1.1.2",
+    "aws-iot-device-sdk-v2": "^1.0.5"
+  }
+}

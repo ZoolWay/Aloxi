@@ -1,0 +1,8 @@
+{
+    "keyPath": "config/device-private.pem.key",
+    "certPath": "config/device-certificate.pem.crt",
+    "caPath": "config/AmazonRootCA3.pem",
+    "clientId": "aloxi-bridge-client",
+    "topic": "aloxi-bridge",
+    "endpoint": "XXXXXXXXXXXXXX-ats.iot.eu-west-1.amazonaws.com"
+}
