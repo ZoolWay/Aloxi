@@ -37,11 +37,15 @@ export class BridgeServer {
             this.server = this.app.listen(port, () => {
                 this.log.info(`Aloxi Bridge listening on port ${port}`);
             });
-            this.app.get('/stop', (req, resp) => this.handleStop(req, resp));
-            this.app.get('/status', (req, resp) => this.handleStatus(req, resp));
+            this.app.get('/stop', (req, resp) => this.handleWebStopRequest(req, resp));
+            this.app.get('/status', (req, resp) => this.handleWebStatusRequest(req, resp));
 
-            this.iotConnector = new AwsIotConnector(this.log, './config/aws-iot.json');
+            this.log.debug('Connecting to AWS IoT');
+            const self = this;
+            this.iotConnector = new AwsIotConnector(this.log, './config/aws-iot.json', (payload) => self.handleMessage(payload));
             await this.iotConnector.start();
+
+            this.log.info('Aloxi Bridge server started');
 
             this.isStarted = true;
         } catch (err) {
@@ -72,7 +76,16 @@ export class BridgeServer {
         this.isStarted = false;
     }
 
-    private handleStatus(req: express.Request<ParamsDictionary, any, any, Query>, resp: express.Response<any>): void {
+    private sendMessage(payload: string | object): void {
+        this.log.debug('(cloud) <-- sending message');
+        this.iotConnector.publish(payload);
+    }
+
+    private handleMessage(payload: string): void {
+        this.log.debug('(cloud) --> message received');
+    }
+
+    private handleWebStatusRequest(req: express.Request<ParamsDictionary, any, any, Query>, resp: express.Response<any>): void {
         let statusObject = {
             isStarted: this.isStarted,
             timestamp: new Date().toISOString()
@@ -80,7 +93,7 @@ export class BridgeServer {
         resp.send(statusObject);
     }
 
-    private handleStop(req: express.Request<ParamsDictionary, any, any, Query>, resp: express.Response<any>): void {
+    private handleWebStopRequest(req: express.Request<ParamsDictionary, any, any, Query>, resp: express.Response<any>): void {
         this.log.warn('User requested to stop!');
         resp.send('Trying to stop Aloxi Bridge');
         this.stop();
