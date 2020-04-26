@@ -14,7 +14,7 @@ export class BridgeServer {
 
     public static launch(log: winston.Logger): BridgeServer {
         let bs = new BridgeServer();
-        bs.log = log;
+        bs.log = log.child({ module: 'BridgeServer' });
         bs.start();
         return bs;
     }

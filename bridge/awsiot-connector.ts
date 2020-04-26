@@ -27,7 +27,7 @@ export class AwsIotConnector {
     private onPublish: (payload: string) => void;
 
     public constructor(log: winston.Logger, configFile: string, onPublish: (payload: string) => void) {
-        this.log = log;
+        this.log = log.child({ module: 'AwsIotConnector' });
         this.configFile = configFile;
         this.onPublish = onPublish;
     }

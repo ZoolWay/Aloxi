@@ -5,12 +5,10 @@ import { BridgeServer } from './bridge-server';
 const log = winston.createLogger({
     level: 'debug', // on Pi set higher!!
     format: winston.format.combine(
-        winston.format.colorize(),
         winston.format.timestamp({
             format: 'YYYY-MM-DD HH:mm:ss'
         }),
-        winston.format.padLevels(),
-        winston.format.printf((info) => { return `${info.timestamp} ${info.level.toUpperCase()}: ${info.message}` }),
+        winston.format.printf((info) => { return `${info.timestamp} ${info.level.toUpperCase()} [${info.module}] ${info.message}` }),
     ),
     transports: [
         new winston.transports.File({ filename: 'error.log', level: 'error' }),
@@ -19,4 +17,5 @@ const log = winston.createLogger({
 });
 
 
+log.debug('Launching', { 'module': 'Main' });
 BridgeServer.launch(log);
