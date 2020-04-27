@@ -1,3 +1,4 @@
+import { LoxoneConnector, LoxoneShadow } from './loxone-connector';
 import express = require('express');
 import winston = require('winston');
 import { Server } from 'http';
@@ -11,6 +12,7 @@ export class BridgeServer {
     private server: Server;
     private app: express.Application;
     private iotConnector: AwsIotConnector;
+    private loxoneConnector: LoxoneConnector;
 
     public static launch(log: winston.Logger): BridgeServer {
         let bs = new BridgeServer();
@@ -44,6 +46,9 @@ export class BridgeServer {
             const self = this;
             this.iotConnector = new AwsIotConnector(this.log, './config/aws-iot.json', (payload) => self.handleMessage(payload));
             await this.iotConnector.start();
+
+            this.log.debug('Setting up Loxone connection');
+            this.loxoneConnector = new LoxoneConnector(this.log, './config/loxone.json', (model) => self.handleModelUpdate(model));
 
             this.log.info('Aloxi Bridge server started');
 
@@ -85,9 +90,17 @@ export class BridgeServer {
         this.log.debug('(cloud) --> message received');
     }
 
+    private handleModelUpdate(model: LoxoneShadow): void {
+        this.log.debug('(lox) --> new model');
+    }
+
     private handleWebStatusRequest(req: express.Request<ParamsDictionary, any, any, Query>, resp: express.Response<any>): void {
+        this.log.debug('(web) --> GET /status');
         let statusObject = {
             isStarted: this.isStarted,
+            loxone: (this.loxoneConnector ? this.loxoneConnector.getState() : 'not ready'),
+            cloud: 'not implemented yet',
+            alexa: 'not implemented yet',
             timestamp: new Date().toISOString()
         };
         resp.send(statusObject);
