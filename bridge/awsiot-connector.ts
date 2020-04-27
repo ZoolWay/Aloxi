@@ -5,6 +5,8 @@ import { TextDecoder } from 'util';
 let os = require('os');
 import { NetworkInterfaceInfo } from 'os';
 
+export type OnPublishHandler = (payload: string) => void;
+
 export interface AwsIotConfiguration {
     keyPath: string,
     certPath: string,
@@ -24,20 +26,24 @@ export class AwsIotConnector {
     private configFile: string;
     private config: AwsIotConfiguration;
     private conn: mqtt.MqttClientConnection;
-    private onPublish: (payload: string) => void;
+    private onPublish: OnPublishHandler;
 
-    public constructor(log: winston.Logger, configFile: string, onPublish: (payload: string) => void) {
+    public constructor(log: winston.Logger, configFile: string, onPublish: OnPublishHandler) {
         this.log = log.child({ module: 'AwsIotConnector' });
         this.configFile = configFile;
         this.onPublish = onPublish;
     }
 
     public async start(): Promise<void> {
-        this.config = this.readConfiguration(this.configFile);
-        this.conn = this.createMqttClientConnection();
-        await this.conn.connect();
-        await this.subscribe();
-        await this.publishBridge();
+        try {
+            this.config = this.readConfiguration(this.configFile);
+            this.conn = this.createMqttClientConnection();
+            await this.conn.connect();
+            await this.subscribe();
+            await this.publishBridge();
+        } catch (err) {
+            this.log.error("Starting AWS IoT connection failed: ", err);
+        }
     }
 
     public stop(): Promise<void> {
