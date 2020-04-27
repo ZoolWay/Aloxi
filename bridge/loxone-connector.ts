@@ -23,6 +23,7 @@ export interface MiniserverShadow {
 
 export interface LoxoneShadow {
     miniserver: MiniserverShadow;
+    rooms: RoomDefinition[];
     retrievedAs: string;
     retrievedAsAdmin: boolean;
     retrievedAt: Date;
@@ -83,12 +84,23 @@ export class LoxoneConnector {
             }
             const struct = resp.data;
 
+            let rooms: RoomDefinition[] = [];
+            let roomKeys = Object.keys(struct.rooms);
+            for (let roomKey of roomKeys) {
+                let structRoom = struct.rooms[roomKey];
+                rooms.push({
+                    name: structRoom.name,
+                    uuid: structRoom.uuid
+                });
+            }
+
             let newModel: LoxoneShadow = {
                 miniserver: {
                     name: struct.msInfo.msName,
                     project: struct.msInfo.projectName,
                     localUrl: struct.msInfo.localUrl
                 },
+                rooms: rooms,
                 retrievedAs: struct.msInfo.currentUser.name,
                 retrievedAsAdmin: struct.msInfo.currentUser.isAdmin,
                 retrievedAt: new Date()
