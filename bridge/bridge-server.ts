@@ -3,7 +3,7 @@ import express = require('express');
 import winston = require('winston');
 import { Server } from 'http';
 import { ParamsDictionary, Query } from 'express-serve-static-core';
-import { AwsIotConnector } from './awsiot-connector';
+import { AwsIotConnector, AloxiMessage, AloxiOperation } from './awsiot-connector';
 
 
 export class BridgeServer {
@@ -81,13 +81,18 @@ export class BridgeServer {
         this.isStarted = false;
     }
 
-    private sendMessage(payload: string | object): void {
-        this.log.debug('(cloud) <-- sending message');
-        this.iotConnector.publish(payload);
+    private sendMessage(message: AloxiMessage): void {
+        this.log.debug(`(cloud) <-- sending message '${message.operation}'`);
+        this.iotConnector.publish(message);
     }
 
-    private handleMessage(payload: string): void {
-        this.log.debug('(cloud) --> message received');
+    private handleMessage(message: AloxiMessage): void {
+        this.log.debug(`(cloud) --> message received '${message.operation}'`);
+        switch (message.operation) {
+            case 'echo':
+                this.performOperationEcho(message.data);
+                break;
+        }
     }
 
     private handleModelUpdate(model: LoxoneShadow): void {
@@ -110,5 +115,13 @@ export class BridgeServer {
         this.log.warn('User requested to stop!');
         resp.send('Trying to stop Aloxi Bridge');
         this.stop();
+    }
+
+    private createMessage(operation: AloxiOperation, data: any): AloxiMessage {
+        return { 'type': 'aloxiComm', 'operation': operation, 'data': data };
+    }
+
+    private performOperationEcho(data: any): void {
+        this.sendMessage(this.createMessage('echoResponse', data));
     }
 }

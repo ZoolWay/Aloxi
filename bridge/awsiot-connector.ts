@@ -5,7 +5,13 @@ import { TextDecoder } from 'util';
 let os = require('os');
 import { NetworkInterfaceInfo } from 'os';
 
-export type OnPublishHandler = (payload: string) => void;
+export type OnPublishHandler = (message: AloxiMessage) => void;
+export type AloxiOperation = 'echo' | 'echoResponse' | 'discover' | 'discoverResponse';
+export interface AloxiMessage {
+    type: 'aloxiComm';
+    operation: AloxiOperation;
+    data: any;
+}
 
 export interface AwsIotConfiguration {
     keyPath: string,
@@ -14,11 +20,6 @@ export interface AwsIotConfiguration {
     clientId: string,
     topic: string,
     endpoint: string
-}
-
-function logPad(message: string): string {
-    if ((message === undefined) || (message === null)) return message;
-    return message.split("\n").join("\n                              ");
 }
 
 export class AwsIotConnector {
@@ -50,7 +51,14 @@ export class AwsIotConnector {
         return this.conn.disconnect();
     }
 
-    public publish(payload: mqtt.Payload): Promise<void> {
+    public publish(message: AloxiMessage): Promise<void> {
+        if (message.type === undefined) message.type = 'aloxiComm';
+        if (message.type !== 'aloxiComm') throw new Error('Invalid aloxi message type');
+        if (message.operation === undefined) throw new Error('Aloxi message misses operation');
+        return this.publishInternal(message);
+    }
+
+    private publishInternal(payload: mqtt.Payload): Promise<void> {
         const log = this.log;
         const configTopic = this.config.topic;
         return this.conn.publish(this.config.topic, payload, mqtt.QoS.AtLeastOnce)
@@ -66,10 +74,19 @@ export class AwsIotConnector {
         const configTopic = this.config.topic;
         const notifyOnPublish = this.onPublish;
         const onPublishCallback = async (topic: string, payload: ArrayBuffer) => {
-            const json = decoder.decode(payload);
-            log.debug(`Message received on topic ${topic}`);
-            log.debug(logPad(json));
-            notifyOnPublish(json);
+            try {
+                const payloadString = decoder.decode(payload);
+                const message: AloxiMessage = JSON.parse(payloadString);
+                let discard: boolean = ((message.type === undefined) || (message.type !== 'aloxiComm') || (message.operation === undefined));
+                if (discard) {
+                    log.debug('Discarding non-aloxi message');
+                    return;
+                }
+                log.debug(`Received Aloxi message for operation ${message.operation}`);
+                notifyOnPublish(message);
+            } catch (err) {
+                log.error('Failed to handle a received message: ' + err);
+            }
         };
         return this.conn.subscribe(this.config.topic, mqtt.QoS.AtLeastOnce, onPublishCallback)
             .then((v: mqtt.MqttSubscribeRequest) => {
