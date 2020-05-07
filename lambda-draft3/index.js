@@ -7,7 +7,11 @@
  * Requires these environment variables:
  * IOT_ENDPOINT: Set to your IoT Core endpoint, 
  *   e.g. XXXXXXXXXX-ats.iot.eu-west-1.amazonaws.com
- * IOT_TOPIC: Set to the same topic name as the Aloxi Bridge on your device.
+ * IOT_TOPIC_TOBRIDGE: This topic is used to send messages to an Aloxi 
+ *   bridge and should match the 'topicReceive' setting of it.
+ * IOT_TOPIC_RESPONSES: This topic is send with requests and defines
+ *   where the adapter expects (and listens for) its responses from the
+ *   bridge.
  * 
  * Requires policies to connect, pub, sub and receive on your AWS IoT Core.
  * Function will be endpoint to your Alexa Smart Home Skill.
@@ -21,19 +25,22 @@ const awsIot = require('aws-iot-device-sdk');
 const util = require('util');
 const decoder = new util.TextDecoder('utf-8');
 
-const device = awsIot.jobs({ host: process.env.IOT_ENDPOINT, protocol: 'wss' });
+let config = { host: process.env.IOT_ENDPOINT, protocol: 'wss' };
+const device = awsIot.device(config);
 
 device.on('connect', function () {
-    device.subscribe(process.env.IOT_TOPIC);
+    console.debug('connect');
+    device.subscribe(process.env.IOT_TOPIC_RESPONSES);
 });
 
 let subscriber = null;
 let lastEchoRequesst = null;
 
 device.on('message', function (topic, encPayload) {
+    console.debug(`incoming on topic '${topic}'`);
     if (encPayload == undefined) return;
     const strPayload = decoder.decode(encPayload);
-    console.debug('incoming on topic \'' + topic + '\': ' + strPayload);
+    console.debug(`incoming on topic '${topic}': ${strPayload}`);
     const payload = JSON.parse(strPayload);
 
     if ((payload.type === undefined) || (payload.type !== 'aloxiComm')) return;
@@ -53,10 +60,16 @@ device.on('message', function (topic, encPayload) {
 
 async function performEchoRequest() {
     lastEchoRequesst = "from-lambda" + new Date().toISOString();
-    const deviceRequest = { "type": "aloxiComm", "operation": "echo", "data": lastEchoRequesst };
+    const deviceRequest = {
+        "type": "aloxiComm",
+        "operation": "echo",
+        "responseTopic": process.env.IOT_TOPIC_RESPONSES,
+        "data": lastEchoRequesst
+    };
+    console.debug('creating promise');
     const promise = new Promise(function (resolve, reject) {
         subscriber = function (topic, payload) {
-            console.log('received echo response, checking content');
+            console.log('received response (after echo-request), checking content');
             let message;
             if (payload == lastEchoRequesst) {
                 message = 'echo matches';
@@ -68,8 +81,33 @@ async function performEchoRequest() {
         };
     });
 
-    await device.publish(process.env.IOT_TOPIC, JSON.stringify(deviceRequest, null, ''), { qos: 0 }, function (err, data) {
-        //console.log("publishing message to device", err, data);
+    const destTopic = process.env.IOT_TOPIC_TOBRIDGE;
+    console.debug(`dest-topic ${destTopic}`);
+    await device.publish(destTopic, JSON.stringify(deviceRequest, null, ''), { qos: 0 }, function (err, data) {
+        console.debug("publishing echo-request", err, data);
+    });
+
+    console.debug('returning prepared promise');
+    return promise;
+}
+
+async function performAlexaRequest(req) {
+    const deviceRequest = {
+        "type": "aloxiComm",
+        "operation": "pipeAlexaRequest",
+        "responseTopic": process.env.IOT_TOPIC_RESPONSES,
+        "data": req
+    };
+    const promise = new Promise(function (resolve, reject) {
+        subscriber = function (topic, payload) {
+            console.log('received response (after alexa-request), returning payload to Alexa');
+            let message;
+            resolve(payload);
+        };
+    });
+
+    await device.publish(process.env.IOT_TOPIC_TOBRIDGE, JSON.stringify(deviceRequest, null, ''), { qos: 0 }, function (err, data) {
+        console.debug("publishing alexa-request", err, data);
     });
 
     return promise;
@@ -96,6 +134,9 @@ exports.handler = async function (req, context) {
         case 'SetPercentageRequest':
         case 'IncrementPercentageRequest':
         case 'DecrementPercentageRequest':
+            responsePromise = await performAlexaRequest(req);
+            break;
+
         default:
             console.error(`Unsupported request '${reqName}', ignoring`);
             responseObject = {};

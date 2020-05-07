@@ -3,7 +3,7 @@ import express = require('express');
 import winston = require('winston');
 import { Server } from 'http';
 import { ParamsDictionary, Query } from 'express-serve-static-core';
-import { AwsIotConnector, AloxiMessage, AloxiOperation } from './awsiot-connector';
+import { AwsIotConnector, AloxiMessage, AloxiOperation, ResponseTopic } from './awsiot-connector';
 
 
 export class BridgeServer {
@@ -81,16 +81,16 @@ export class BridgeServer {
         this.isStarted = false;
     }
 
-    private sendMessage(message: AloxiMessage): void {
+    private sendMessage(destTopic: string, message: AloxiMessage): void {
         this.log.debug(`(cloud) <-- sending message '${message.operation}'`);
-        this.iotConnector.publish(message);
+        this.iotConnector.publish(destTopic, message);
     }
 
     private handleMessage(message: AloxiMessage): void {
         this.log.debug(`(cloud) --> message received '${message.operation}'`);
         switch (message.operation) {
             case 'echo':
-                this.performOperationEcho(message.data);
+                this.performOperationEcho(message.responseTopic, message.data);
                 break;
         }
     }
@@ -118,10 +118,14 @@ export class BridgeServer {
     }
 
     private createMessage(operation: AloxiOperation, data: any): AloxiMessage {
-        return { 'type': 'aloxiComm', 'operation': operation, 'data': data };
+        return { 'type': 'aloxiComm', 'operation': operation, 'responseTopic': undefined, 'data': data };
     }
 
-    private performOperationEcho(data: any): void {
-        this.sendMessage(this.createMessage('echoResponse', data));
+    private performOperationEcho(responseTopic: ResponseTopic, data: any): void {
+        if (responseTopic === undefined) {
+            this.log.error('(operation-echo) failed, response topic missing');
+            return;
+        }
+        this.sendMessage(responseTopic, this.createMessage('echoResponse', data));
     }
 }

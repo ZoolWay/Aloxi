@@ -3,6 +3,10 @@
     "certPath": "config/device-certificate.pem.crt",
     "caPath": "config/AmazonRootCA3.pem",
     "clientId": "aloxi-bridge-client",
-    "topic": "aloxi-bridge",
+    "topicReceive": "aloxi:to-bridge",
+    "announceTopics": [
+        "aloxi:alexa-response",
+        "aloxi:to-bridge"
+    ],
     "endpoint": "XXXXXXXXXXXXXX-ats.iot.eu-west-1.amazonaws.com"
 }

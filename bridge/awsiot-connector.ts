@@ -6,10 +6,12 @@ let os = require('os');
 import { NetworkInterfaceInfo } from 'os';
 
 export type OnPublishHandler = (message: AloxiMessage) => void;
-export type AloxiOperation = 'echo' | 'echoResponse' | 'discover' | 'discoverResponse';
+export type AloxiOperation = 'bridgeAnnouncement' | 'echo' | 'echoResponse' | 'pipeAlexaRequest' | 'pipeAlexaResponse';
+export type ResponseTopic = string | undefined;
 export interface AloxiMessage {
     type: 'aloxiComm';
     operation: AloxiOperation;
+    responseTopic: ResponseTopic;
     data: any;
 }
 
@@ -18,7 +20,8 @@ export interface AwsIotConfiguration {
     certPath: string,
     caPath: string,
     clientId: string,
-    topic: string,
+    topicReceive: string,
+    announceTopics: string[],
     endpoint: string
 }
 
@@ -51,19 +54,28 @@ export class AwsIotConnector {
         return this.conn.disconnect();
     }
 
-    public publish(message: AloxiMessage): Promise<void> {
+    /**
+     * Publishes a message to the given topic and returns its packet-id.
+     * @param topic 
+     * @param message 
+     */
+    public publish(topic: string, message: AloxiMessage): Promise<number> {
         if (message.type === undefined) message.type = 'aloxiComm';
         if (message.type !== 'aloxiComm') throw new Error('Invalid aloxi message type');
         if (message.operation === undefined) throw new Error('Aloxi message misses operation');
-        return this.publishInternal(message);
+        return this.publishInternal(topic, message).then((req: mqtt.MqttRequest) => {
+            if (req.packet_id === undefined) return -1;
+            return req.packet_id;
+        });
     }
 
-    private publishInternal(payload: mqtt.Payload): Promise<void> {
+    private publishInternal(topic: string, payload: mqtt.Payload): Promise<mqtt.MqttRequest> {
         const log = this.log;
-        const configTopic = this.config.topic;
-        return this.conn.publish(this.config.topic, payload, mqtt.QoS.AtLeastOnce)
-            .then((v: mqtt.MqttRequest) => {
-                log.debug(`Published to topic '${configTopic}', packet id ${v.packet_id}`);
+        const destTopic = topic;
+        return this.conn.publish(topic, payload, mqtt.QoS.AtLeastOnce)
+            .then((req: mqtt.MqttRequest) => {
+                log.debug(`Published to topic '${destTopic}', packet id ${req.packet_id}`);
+                return req;
             });
     }
 
@@ -71,7 +83,7 @@ export class AwsIotConnector {
         this.log.debug('Subscribing...');
         const log = this.log;
         const decoder = new TextDecoder('utf8');
-        const configTopic = this.config.topic;
+        const configTopic = this.config.topicReceive;
         const notifyOnPublish = this.onPublish;
         const onPublishCallback = async (topic: string, payload: ArrayBuffer) => {
             try {
@@ -88,7 +100,7 @@ export class AwsIotConnector {
                 log.error('Failed to handle a received message: ' + err);
             }
         };
-        return this.conn.subscribe(this.config.topic, mqtt.QoS.AtLeastOnce, onPublishCallback)
+        return this.conn.subscribe(configTopic, mqtt.QoS.AtLeastOnce, onPublishCallback)
             .then((v: mqtt.MqttSubscribeRequest) => {
                 log.debug(`Subscribed to topic '${configTopic}'`);
             });
@@ -96,17 +108,26 @@ export class AwsIotConnector {
 
     private publishBridge(): Promise<void> {
         this.log.debug('Publishing bridge...');
+        let announcePromises = new Array<Promise<mqtt.MqttRequest>>();
         const log = this.log;
-        const configTopic = this.config.topic;
-        const payload = {
-            message: `Hi, I am an Aloxi Bridge!`,
-            timestamp: new Date().toISOString(),
-            networkConnections: this.getIpAddresses()
-        };
-        return this.conn.publish(this.config.topic, payload, mqtt.QoS.AtLeastOnce)
-            .then((v: mqtt.MqttRequest) => {
-                log.debug(`Published bridge to topic '${configTopic}', packet id ${v.packet_id}`);
-            });
+        const announceToTopics = this.config.announceTopics;
+        for (let announceToTopic of announceToTopics) {
+            const message: AloxiMessage = {
+                type: "aloxiComm",
+                operation: "bridgeAnnouncement",
+                responseTopic: this.config.topicReceive,
+                data: {
+                    message: `Hi, I am an Aloxi Bridge!`,
+                    timestamp: new Date().toISOString(),
+                    networkConnections: this.getIpAddresses()
+                }
+            }
+            let p = this.publishInternal(announceToTopic, message);
+            announcePromises.push(p);
+        }
+        return Promise.all(announcePromises).then((requests: mqtt.MqttRequest[]) => {
+            log.debug(`Published bridge to ${requests.length} configured topics`);
+        });
     }
 
     private readConfiguration(configFile: string): AwsIotConfiguration {
@@ -121,7 +142,8 @@ export class AwsIotConnector {
                 certPath: '',
                 caPath: '',
                 clientId: 'aloxi-bridge-client',
-                topic: 'aloxi-bridge',
+                topicReceive: 'aloxi:to-bridge',
+                announceTopics: ['aloxi:alexa-response', 'aloxi:to-bridge'],
                 endpoint: ''
             };
         }
