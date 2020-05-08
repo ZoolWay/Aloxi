@@ -1,3 +1,7 @@
+.vs
+obj/
+bin/
+
 # Logs
 logs
 *.log
