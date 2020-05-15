@@ -13,7 +13,7 @@ namespace iotdotnetcorepublisher
         {
             Console.WriteLine("Hello World!");
 
-            string iotEndpoint = "a1fk2tqo498isz-ats.iot.eu-west-1.amazonaws.com";
+            string iotEndpoint = "XYZ-ats.iot.eu-west-1.amazonaws.com";
             Console.WriteLine("AWS IoT Dotnet core message publisher starting");
             int brokerPort = 8883;
 
@@ -23,7 +23,7 @@ namespace iotdotnetcorepublisher
             string caCertFile = Path.Join(AppContext.BaseDirectory, "..\\..\\..\\..\\bridge\\config\\AmazonRootCA1.pem");
             Console.WriteLine($"CA cert file: {caCertFile}");
             var caCert = X509Certificate.CreateFromCertFile(caCertFile); //crt format?
-            var clientCert = new X509Certificate2(Path.Join(AppContext.BaseDirectory, "..\\..\\..\\..\\bridge\\config\\badb237f72-certificate.pfx"));
+            var clientCert = new X509Certificate2(Path.Join(AppContext.BaseDirectory, "..\\..\\..\\..\\bridge\\config\\XYZ-certificate.pfx"));
 
             var client = new MqttClient(iotEndpoint, brokerPort, true, caCert, clientCert, MqttSslProtocols.TLSv1_2);
 
