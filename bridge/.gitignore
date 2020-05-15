@@ -4,6 +4,7 @@ config/loxone.json
 config/*.pem
 config/*.crt
 config/*.key
+config/*.pfx
 
 
 
