@@ -1,0 +1,18 @@
+{
+  "profiles": {
+    "Mock Lambda Test Tool": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Users\\%USERNAME%\\.dotnet\\tools\\dotnet-lambda-test-tool-3.1.exe",
+      "commandLineArgs": "--port 5050",
+      "workingDirectory": ".\\bin\\$(Configuration)\\netcoreapp3.1",
+      "environmentVariables": {
+        "TOPIC_RESPONSE": "aloxi:alexa-response",
+        "TOPIC_BRIDGE": "aloxi:to-bridge",
+        "CERT_PATH": "../../../../bridge/config/XYZ-certificate.pfx",
+        "CLIENT_ID": "aloxi-alexa-adapter",
+        "ENDPOINT": "XYZ-ats.iot.eu-west-1.amazonaws.com",
+        "CA_PATH": "../../../../bridge/config/AmazonRootCA1.pem"
+      }
+    }
+  }
+}
