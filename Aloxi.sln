@@ -13,7 +13,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Root", "Root", "{4D53B31A-E
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aloxi.Bridge", "Aloxi.Bridge\Aloxi.Bridge.csproj", "{01E14CC9-A74B-40A8-A0E4-DFE823102F32}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aloxi.Bridge", "Aloxi.Bridge\Aloxi.Bridge.csproj", "{C65616C2-FDFF-4D97-9D40-6E196C2113BE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,10 +25,10 @@ Global
 		{FDD202F5-E8C5-4071-88B6-D962CB3FE2FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FDD202F5-E8C5-4071-88B6-D962CB3FE2FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FDD202F5-E8C5-4071-88B6-D962CB3FE2FC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{01E14CC9-A74B-40A8-A0E4-DFE823102F32}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{01E14CC9-A74B-40A8-A0E4-DFE823102F32}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{01E14CC9-A74B-40A8-A0E4-DFE823102F32}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{01E14CC9-A74B-40A8-A0E4-DFE823102F32}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C65616C2-FDFF-4D97-9D40-6E196C2113BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C65616C2-FDFF-4D97-9D40-6E196C2113BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C65616C2-FDFF-4D97-9D40-6E196C2113BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C65616C2-FDFF-4D97-9D40-6E196C2113BE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

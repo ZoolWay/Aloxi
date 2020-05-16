@@ -2,6 +2,7 @@
 obj/
 bin/
 *.csproj.user
+appsettings.Development.json
 
 # Logs
 logs
