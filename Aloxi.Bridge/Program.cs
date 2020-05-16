@@ -19,6 +19,6 @@ namespace ZoolWay.Aloxi.Bridge
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddHostedService<Worker>();
-                });
+                }).UseSystemd();
     }
 }

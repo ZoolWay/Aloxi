@@ -10,18 +10,18 @@ namespace ZoolWay.Aloxi.Bridge
 {
     public class Worker : BackgroundService
     {
-        private readonly ILogger<Worker> _logger;
+        private readonly ILogger<Worker> log;
 
-        public Worker(ILogger<Worker> logger)
+        public Worker(ILogger<Worker> log)
         {
-            _logger = logger;
+            this.log = log;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
+                log.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
                 await Task.Delay(1000, stoppingToken);
             }
         }
