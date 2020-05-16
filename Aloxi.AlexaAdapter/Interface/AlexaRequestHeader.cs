@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ZoolWay.AloxiAlexaAdapter.Interface
+namespace ZoolWay.Aloxi.AlexaAdapter.Interface
 {
     internal class AlexaRequestHeader
     {

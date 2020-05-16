@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace ZoolWay.AloxiAlexaAdapter.Processing.Meta
+namespace ZoolWay.Aloxi.AlexaAdapter.Processing.Meta
 {
     internal class AloxiMessage
     {

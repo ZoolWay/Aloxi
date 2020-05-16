@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ZoolWay.AloxiAlexaAdapter.Processing.Meta
+namespace ZoolWay.Aloxi.AlexaAdapter.Processing.Meta
 {
     internal class EchoPayload
     {

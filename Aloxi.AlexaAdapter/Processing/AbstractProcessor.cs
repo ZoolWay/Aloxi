@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 
-namespace ZoolWay.AloxiAlexaAdapter.Processing
+namespace ZoolWay.Aloxi.AlexaAdapter.Processing
 {
     internal abstract class AbstractProcessor
     {

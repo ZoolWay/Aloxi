@@ -2,12 +2,12 @@ using System;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Newtonsoft.Json.Linq;
-using ZoolWay.AloxiAlexaAdapter.Interface;
-using ZoolWay.AloxiAlexaAdapter.Processing;
+using ZoolWay.Aloxi.AlexaAdapter.Interface;
+using ZoolWay.Aloxi.AlexaAdapter.Processing;
 
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
 
-namespace ZoolWay.AloxiAlexaAdapter
+namespace ZoolWay.Aloxi.AlexaAdapter
 {
     /// <summary>
     /// Main function which handles all Aloxi-related requests coming from Alexa or testing clients.

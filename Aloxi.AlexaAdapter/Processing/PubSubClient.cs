@@ -11,9 +11,9 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using uPLibrary.Networking.M2Mqtt;
 using uPLibrary.Networking.M2Mqtt.Messages;
-using ZoolWay.AloxiAlexaAdapter.Processing.Meta;
+using ZoolWay.Aloxi.AlexaAdapter.Processing.Meta;
 
-namespace ZoolWay.AloxiAlexaAdapter.Processing
+namespace ZoolWay.Aloxi.AlexaAdapter.Processing
 {
     internal class PubSubClient
     {

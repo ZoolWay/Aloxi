@@ -3,7 +3,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <AWSProjectType>Lambda</AWSProjectType>
-    <RootNamespace>ZoolWay.AloxiAlexaAdapter</RootNamespace>
+    <RootNamespace>ZoolWay.Aloxi.AlexaAdapter</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Processing\AbstractProcessor.cs~RF368a98c.TMP" />

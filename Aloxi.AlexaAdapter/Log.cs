@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using Amazon.Lambda.Core;
 
-namespace ZoolWay.AloxiAlexaAdapter
+namespace ZoolWay.Aloxi.AlexaAdapter
 {
     public static class Log
     {

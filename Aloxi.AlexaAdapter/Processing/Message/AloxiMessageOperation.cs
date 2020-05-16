@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace ZoolWay.AloxiAlexaAdapter.Processing.Meta
+namespace ZoolWay.Aloxi.AlexaAdapter.Processing.Meta
 {
     [JsonConverter(typeof(StringEnumConverter))]
     internal enum AloxiMessageOperation

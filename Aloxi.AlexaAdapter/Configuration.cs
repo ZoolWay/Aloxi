@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Amazon.Lambda.Core;
 
-namespace ZoolWay.AloxiAlexaAdapter
+namespace ZoolWay.Aloxi.AlexaAdapter
 {
     /// <summary>
     /// Capsules all configuration settings for the function which are collected from environment variables and LambdaContext.

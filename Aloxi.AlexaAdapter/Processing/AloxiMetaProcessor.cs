@@ -3,9 +3,9 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Newtonsoft.Json.Linq;
-using ZoolWay.AloxiAlexaAdapter.Processing.Meta;
+using ZoolWay.Aloxi.AlexaAdapter.Processing.Meta;
 
-namespace ZoolWay.AloxiAlexaAdapter.Processing
+namespace ZoolWay.Aloxi.AlexaAdapter.Processing
 {
     internal class AloxiMetaProcessor : AbstractProcessor
     {
