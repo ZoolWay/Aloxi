@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
 
 namespace ZoolWay.Aloxi.Bridge
 {
@@ -14,11 +16,18 @@ namespace ZoolWay.Aloxi.Bridge
             CreateHostBuilder(args).Build().Run();
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
+        public static IHostBuilder CreateHostBuilder(string[] args)
+        {
+            return Host.CreateDefaultBuilder(args)
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddHostedService<Worker>();
-                }).UseSystemd();
+                })
+                .ConfigureWebHostDefaults((webBuilder) =>
+                {
+                    webBuilder.UseStartup<Api.Startup>();
+                })
+                .UseSystemd();
+        }
     }
 }
