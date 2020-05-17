@@ -1,0 +1,14 @@
+﻿akka {
+	loglevel = DEBUG
+	loggers = [ "Akka.Logger.Extensions.Logging.LoggingLogger, Akka.Logger.Extensions.Logging" ]
+	log-config-on-start = off
+	actor {
+		debug {
+			receive = off
+			autoreceive = off
+			lifecycle  = off
+			event-stream = off
+			unhandled = on
+		}
+	}
+}
