@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -20,6 +21,7 @@ namespace ZoolWay.Aloxi.Bridge
         private ActorSystem actorSystem;
         private IActorRef mqttManager;
         private IActorRef metaProcessor;
+        private IActorRef loxoneAdapter;
 
         public ActorSystem ActorSystem 
         { 
@@ -42,6 +44,7 @@ namespace ZoolWay.Aloxi.Bridge
             this.actorSystem = null;
             this.mqttManager = ActorRefs.Nobody;
             this.metaProcessor = ActorRefs.Nobody;
+            this.loxoneAdapter = ActorRefs.Nobody;
 
             LoggingLogger.LoggerFactory = loggerFactory;
         }
@@ -54,6 +57,7 @@ namespace ZoolWay.Aloxi.Bridge
             Config akkaConfig = ConfigurationFactory.ParseString(configurationData);
             this.actorSystem = ActorSystem.Create("aloxi-bridge", akkaConfig);
             
+            // build MQTT
             this.mqttManager = ActorRefs.Nobody;
             try
             {
@@ -67,8 +71,24 @@ namespace ZoolWay.Aloxi.Bridge
                 log.LogError(ex, "Initializing of MQTT node failed");
             }
 
+            // build meta
             this.metaProcessor = this.actorSystem.ActorOf(Props.Create(() => new Meta.MetaProcessorActor(this.mqttManager)), "meta");
 
+            // build Loxone
+            this.loxoneAdapter = ActorRefs.Nobody;
+            try
+            {
+                var c = configuration.GetSection("Loxone");
+                string[] ignoreCats = c.GetValue<string[]>("IgnoreCategories");
+                var loxoneConfig = new Loxone.LoxoneConfig(c["Miniserver"], c["Username"], c["Password"], ignoreCats.ToImmutableArray());
+                this.loxoneAdapter = this.actorSystem.ActorOf(Props.Create(() => new Loxone.AdapterActor(loxoneConfig)), "loxone");
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Initializing of Loxone node failed");
+            }
+
+            // configurations
             this.mqttManager.Tell(new MqttMessage.RegisterProcessor(Models.AloxiMessageOperation.Echo, this.metaProcessor));
         }
     }
