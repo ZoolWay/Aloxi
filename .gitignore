@@ -3,6 +3,7 @@ obj/
 bin/
 *.csproj.user
 appsettings.Development.json
+/certs
 
 # Logs
 logs
