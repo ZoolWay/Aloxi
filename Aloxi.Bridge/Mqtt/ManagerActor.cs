@@ -1,6 +1,7 @@
 ﻿using System;
 using Akka.Actor;
 using Akka.Event;
+using Akka.Pattern;
 
 namespace ZoolWay.Aloxi.Bridge.Mqtt
 {
@@ -25,7 +26,18 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
         protected override void PreStart()
         {
             log.Info("Starting");
-            this.subscriber = Context.ActorOf(Props.Create(() => new SubscriptionActor(Self, this.mqttConfig, this.subscriptionTopic)), $"subscription-{this.subscriptionTopic}");
+
+            var subscriberProps = Props.Create(() => new SubscriptionActor(Self, this.mqttConfig, this.subscriptionTopic));
+            var supervisedProps = BackoffSupervisor.Props(
+                Backoff.OnFailure(
+                    subscriberProps,
+                    childName: $"subscription-{this.subscriptionTopic}",
+                    minBackoff: TimeSpan.FromSeconds(3),
+                    maxBackoff: TimeSpan.FromSeconds(60),
+                    randomFactor: 0.2,
+                    maxNrOfRetries: 5
+                ));
+            this.subscriber = Context.ActorOf(supervisedProps, $"supervisor-sub-{this.subscriptionTopic}");
         }
 
         protected override void PostStop()

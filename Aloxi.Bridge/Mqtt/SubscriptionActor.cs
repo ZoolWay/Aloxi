@@ -42,6 +42,7 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
 
         protected override void PreStart()
         {
+            log.Debug("Starting");
             IActorRef self = Self;
             this.client = MqttClientProvider.For(this.mqttConfig);
             byte flag = this.client.Connect(this.mqttConfig.ClientId);
@@ -60,6 +61,13 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
                 if (this.client.IsConnected) this.client.Disconnect();
                 this.client = null;
             }
+            log.Debug("Stopped");
+        }
+
+        protected override void PostRestart(Exception reason)
+        {
+            log.Warning("Restarted because of: {0}", reason.Message);
+            base.PostRestart(reason);
         }
 
         private void ReceivedPublish(MqttMessage.Publish message)
