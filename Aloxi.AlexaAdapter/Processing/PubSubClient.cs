@@ -48,6 +48,18 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
                 });
         }
 
+        public Task<JObject> RequestBridgePassthrough(AloxiMessageOperation operation, JObject payload)
+        {
+            var requestMessage = AloxiMessage.Build(operation, payload, this.configuration.TopicResponse);
+            return PublishAndAwaitResponse(configuration.TopicBridge, requestMessage)
+                .ContinueWith<JObject>((publishTask) =>
+                {
+                    var responseMessage = publishTask.Result;
+                    if (responseMessage == null) return null;
+                    return responseMessage.Data;
+                });
+        }
+
         public async Task<AloxiMessage> PublishAndAwaitResponse(string toTopic, AloxiMessage message)
         {
             if (String.IsNullOrWhiteSpace(message.ResponseTopic)) throw new Exception("ResponseTopic is required for PublishAndAwaitResponse");

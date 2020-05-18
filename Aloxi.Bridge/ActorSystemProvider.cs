@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.Logger.Extensions.Logging;
@@ -22,6 +19,7 @@ namespace ZoolWay.Aloxi.Bridge
         private IActorRef mqttManager;
         private IActorRef metaProcessor;
         private IActorRef loxoneAdapter;
+        private IActorRef alexaAdapter;
 
         public ActorSystem ActorSystem 
         { 
@@ -88,8 +86,20 @@ namespace ZoolWay.Aloxi.Bridge
                 log.LogError(ex, "Initializing of Loxone node failed");
             }
 
+            // build alexa
+            this.alexaAdapter = ActorRefs.Nobody;
+            try
+            {
+                this.alexaAdapter = this.actorSystem.ActorOf(Props.Create(() => new Alexa.AdapterActor()),  "alexa");
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Initializing of Alexa node failed");
+            }
+
             // configurations
             this.mqttManager.Tell(new MqttMessage.RegisterProcessor(Models.AloxiMessageOperation.Echo, this.metaProcessor));
+            this.mqttManager.Tell(new MqttMessage.RegisterProcessor(Models.AloxiMessageOperation.PipeAlexaRequest, this.alexaAdapter));
         }
     }
 }

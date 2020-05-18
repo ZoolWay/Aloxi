@@ -35,8 +35,11 @@ namespace ZoolWay.Aloxi.AlexaAdapter
                     processor = new AloxiMetaProcessor();
                     break;
 
-                case "Alexa.ConnectedHome.Control":
                 case "Alexa.ConnectedHome.Discover":
+                    processor = new AlexaDiscoverProcessor();
+                    break;
+
+                case "Alexa.ConnectedHome.Control":
                 case "Alexa.ConnectedHome.Query":
                 default:
                     break;    
