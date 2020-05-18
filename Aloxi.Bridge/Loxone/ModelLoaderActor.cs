@@ -42,23 +42,31 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
             {
                 if (IsIgnored(cm.Value)) continue;
 
-                // is normal light switch?
-                if (cm.Value.Type == LoxAppModel.ControlTypeModel.Switch)
+                try
                 {
-                    Control newControl = new Control(ControlType.LightControl,
-                        cm.Value.Name,
-                        Guid.Parse(cm.Key),
-                        cm.Value.Name,
-                        cm.Value.States.ToImmutableDictionary<string, Guid>()
-                        );
-                    controls.Add(newControl);
+                    // is normal light switch?
+                    if (cm.Value.Type == LoxAppModel.ControlTypeModel.Switch)
+                    {
+                        Control newControl = new Control(ControlType.LightControl,
+                            cm.Value.Name,
+                            cm.Key,
+                            cm.Value.Name,
+                            cm.Value.States.ToImmutableDictionary<string, LoxoneUuid>()
+                            );
+                        controls.Add(newControl);
+                    }
+                    else
+                    {
+                        log.Debug("Ignoring model control {0}: {1} ({2})", cm.Key, cm.Value.Name, cm.Value.Type);
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    log.Debug("Ignoring model control {0}: {1} ({2})", cm.Key, cm.Value.Name, cm.Value.Type);
+                    log.Error(ex, "Failed to parse loxone control '{0}', ignoring: {1}", cm.Key, ex.Message);
                 }
             }
-
+            Home newModel = new Home(controls.ToImmutableList());
+            Sender.Tell(new LoxoneMessage.UpdatedModel(newModel));
         }
 
         private bool IsIgnored(LoxAppModel.ControlModel controlModel)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -20,7 +21,8 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
             this.loxoneConfig = loxoneConfig;
             this.jsonSettings = new JsonSerializerSettings()
             {
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
+                ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                Converters = new List<JsonConverter> { new Converters.LoxoneUuidConverter() },
             };
         }
 

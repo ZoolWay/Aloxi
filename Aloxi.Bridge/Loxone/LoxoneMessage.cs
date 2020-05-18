@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Threading.Tasks;
+using ZoolWay.Aloxi.Bridge.Models;
 
 namespace ZoolWay.Aloxi.Bridge.Loxone
 {
@@ -11,6 +9,16 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
     {
         public class LoadModel : LoxoneMessage
         {
+        }
+
+        public class UpdatedModel : LoxoneMessage
+        {
+            public Home Model { get; }
+
+            public UpdatedModel(Home model)
+            {
+                this.Model = model;
+            }
         }
     }
 }

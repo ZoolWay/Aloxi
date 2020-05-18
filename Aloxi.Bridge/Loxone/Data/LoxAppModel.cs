@@ -11,8 +11,8 @@ namespace ZoolWay.Aloxi.Bridge.Loxone.Data
     {
         public class UserModel
         {
-            public String Name { get; set; }
-            public Guid Uuid { get; set; }
+            public string Name { get; set; }
+            public LoxoneUuid Uuid { get; set; }
             public bool IsAdmin { get; set; }
             public bool ChangePassword { get; set; }
             public int UserRights { get; set; }
@@ -42,7 +42,7 @@ namespace ZoolWay.Aloxi.Bridge.Loxone.Data
 
         public class RoomModel
         {
-            public Guid Uuid { get; set; }
+            public LoxoneUuid Uuid { get; set; }
             public string Name { get; set; }
             public string Image { get; set; }
             public RoomType Type { get; set; }
@@ -50,7 +50,7 @@ namespace ZoolWay.Aloxi.Bridge.Loxone.Data
 
         public class CategoryModel
         {
-            public Guid Uuid { get; set; }
+            public LoxoneUuid Uuid { get; set; }
             public string Name { get; set; }
             public string Image { get; set; }
             public string Type { get; set; }
@@ -85,18 +85,18 @@ namespace ZoolWay.Aloxi.Bridge.Loxone.Data
         {
             public string Name { get; set; }
             public ControlTypeModel Type { get; set; }
-            public Guid UuidAction { get; set; }
-            public Guid Room { get; set; }
-            public Guid Cat { get; set; }
-            public Dictionary<string, Guid> States { get; set; }
-            public Dictionary<string, Guid> SubControls { get; set; }
+            public LoxoneUuid UuidAction { get; set; }
+            public LoxoneUuid Room { get; set; }
+            public LoxoneUuid Cat { get; set; }
+            public Dictionary<string, LoxoneUuid> States { get; set; }
+            public Dictionary<LoxoneUuid, ControlModel> SubControls { get; set; }
         }
 
         public DateTime LastModified { get; set; }
         public MsInfoModel MsInfo { get; set; }
         public PartnerInfoModel PartnerInfo { get; set; }
-        public Dictionary<string, RoomModel> Rooms { get; set; }
-        public Dictionary<string, CategoryModel> Cats { get; set; }
-        public Dictionary<string, ControlModel> Controls { get; set; }
+        public Dictionary<LoxoneUuid, RoomModel> Rooms { get; set; }
+        public Dictionary<LoxoneUuid, CategoryModel> Cats { get; set; }
+        public Dictionary<LoxoneUuid, ControlModel> Controls { get; set; }
     }
 }

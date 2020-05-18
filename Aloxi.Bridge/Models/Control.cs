@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.ComponentModel;
+using ZoolWay.Aloxi.Bridge.Loxone;
 
 namespace ZoolWay.Aloxi.Bridge.Models
 {
@@ -9,11 +10,11 @@ namespace ZoolWay.Aloxi.Bridge.Models
     {
         public ControlType Type { get; }
         public string FriendlyName { get; }
-        public Guid LoxoneUuid { get; }
+        public LoxoneUuid LoxoneUuid { get; }
         public string LoxoneName { get; }
-        public ImmutableDictionary<string, Guid> Operations { get; }
+        public ImmutableDictionary<string, LoxoneUuid> Operations { get; }
 
-        public Control(ControlType type, string friendlyName, Guid loxoneUuid, string loxoneName, ImmutableDictionary<string, Guid> operations)
+        public Control(ControlType type, string friendlyName, LoxoneUuid loxoneUuid, string loxoneName, ImmutableDictionary<string, LoxoneUuid> operations)
         {
             this.Type = type;
             this.FriendlyName = friendlyName;
