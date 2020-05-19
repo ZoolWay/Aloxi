@@ -9,6 +9,8 @@
     <None Remove="Processing\AbstractProcessor.cs~RF368a98c.TMP" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include=".lambda-test-tool\SavedRequests\Aloxi-AlexaDiscovery.json" />
+    <Content Include=".lambda-test-tool\SavedRequests\Aloxi-AlexaTurnOn.json" />
     <Content Include=".lambda-test-tool\SavedRequests\Aloxi-EchoRequest.json" />
   </ItemGroup>
   <ItemGroup>
