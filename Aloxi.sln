@@ -13,7 +13,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Root", "Root", "{4D53B31A-E
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aloxi.Bridge", "Aloxi.Bridge\Aloxi.Bridge.csproj", "{C65616C2-FDFF-4D97-9D40-6E196C2113BE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Aloxi.Bridge", "Aloxi.Bridge\Aloxi.Bridge.csproj", "{C65616C2-FDFF-4D97-9D40-6E196C2113BE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples-tobridge", "samples-tobridge", "{EDF6C151-9EF2-462A-9D3A-A8E621AF8AF7}"
+	ProjectSection(SolutionItems) = preProject
+		samples-tobridge\mqtt-tobridge-discovery.json = samples-tobridge\mqtt-tobridge-discovery.json
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -32,6 +37,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{EDF6C151-9EF2-462A-9D3A-A8E621AF8AF7} = {4D53B31A-E96D-42E3-B71E-7C4E7A2421C6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F60C499B-4E9E-4CBD-B457-D79F2F66631B}
