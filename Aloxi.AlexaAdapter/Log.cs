@@ -18,6 +18,12 @@ namespace ZoolWay.Aloxi.AlexaAdapter
             Trace.WriteLine($"[{DateTime.Now.TimeOfDay.TotalSeconds:F1}][INFO] {message}");
         }
 
+        public static void Warn(string message)
+        {
+            LambdaLogger.Log(message);
+            Trace.WriteLine($"[{DateTime.Now.TimeOfDay.TotalSeconds:F1}][WARN] {message}");
+        }
+
         public static void Debug(string message)
         {
             Trace.WriteLine($"[{DateTime.Now.TimeOfDay.TotalSeconds:F1}][DEBUG] {message}");
