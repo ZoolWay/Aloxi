@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 
 namespace ZoolWay.Aloxi.AlexaAdapter.Processing
 {
-    internal class AlexaDiscoverProcessor : AbstractProcessor
+    internal class AlexaDiscoveryProcessor : AbstractProcessor
     {
         public override string Name => "AlexaDiscover";
 
