@@ -36,18 +36,18 @@ namespace ZoolWay.Aloxi.AlexaAdapter
                     break;
 
                 case "Alexa.ConnectedHome.Discovery":
-                    processor = new AlexaDiscoveryProcessor();
+                case "Alexa.ConnectedHome.Control":
+                    processor = new AlexaPassthroughProcessor();
                     break;
 
-                case "Alexa.ConnectedHome.Control":
                 case "Alexa.ConnectedHome.Query":
-                default:
-                    break;    
+                    processor = new AlexaCachedQueryProcessor();
+                    break;
             }
             if (processor == null) throw new Exception($"Namespace {alexaRequest.Header.Namespace} is not supported");
 
             Log.Info($"Sending request '{alexaRequest.Header.Name}' to processor '{processor.Name}'");
-            var response = await processor.ProcessRequest(alexaRequest.Header.Name, alexaRequest.Payload, context);
+            var response = await processor.ProcessRequest(alexaRequest, context);
             Log.Debug("Returning response...");
 
             return response;

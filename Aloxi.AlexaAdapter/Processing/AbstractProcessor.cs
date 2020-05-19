@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
+using ZoolWay.Aloxi.AlexaAdapter.Interface;
 
 namespace ZoolWay.Aloxi.AlexaAdapter.Processing
 {
@@ -23,7 +25,19 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
             this.json = JsonSerializer.CreateDefault(this.jsonSettings);
         }
 
-        public abstract Task<JObject> ProcessRequest(string requestName, JObject payload, ILambdaContext lambdaContext);
+        public abstract Task<JObject> ProcessRequest(AlexaSmartHomeRequest request, ILambdaContext lambdaContext);
+
+        protected async Task<JObject> PerformPassthroughRequest(AlexaSmartHomeRequest request, Configuration config, ILambdaContext lambdaContext)
+        {
+            var client = new PubSubClient(config);
+
+            var sw = Stopwatch.StartNew();
+            JObject response = await client.RequestBridgePassthrough(Meta.AloxiMessageOperation.PipeAlexaRequest, JObject.FromObject(request, this.json));
+            sw.Stop();
+
+            Log.Info($"Successful passthrough, took {sw.Elapsed.TotalSeconds}s");
+            return response;
+        }
 
         protected JObject CreateResponse(object response)
         {

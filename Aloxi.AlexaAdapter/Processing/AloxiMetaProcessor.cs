@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Newtonsoft.Json.Linq;
+using ZoolWay.Aloxi.AlexaAdapter.Interface;
 using ZoolWay.Aloxi.AlexaAdapter.Processing.Meta;
 
 namespace ZoolWay.Aloxi.AlexaAdapter.Processing
@@ -11,18 +12,18 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
     {
         public override string Name => "AloxiMeta";
 
-        public override Task<JObject> ProcessRequest(string requestName, JObject payload, ILambdaContext lambdaContext)
+        public override Task<JObject> ProcessRequest(AlexaSmartHomeRequest request, ILambdaContext lambdaContext)
         {
             var config = Configuration.ProvideFor(lambdaContext);
 
-            switch (requestName)
+            switch (request.Header.Name)
             {
                 case "EchoRequest":
-                    return PerformEchoRequest(payload, config, lambdaContext);
+                    return PerformEchoRequest(request.Payload, config, lambdaContext);
             }
 
-            Log.Error($"Request '{requestName}' is unkown");
-            return Task.FromResult(JObject.FromObject(new { Message = $"Failed, {requestName} is unknown" }));
+            Log.Error($"Request '{request.Header.Name}' is unkown");
+            return Task.FromResult(JObject.FromObject(new { Message = $"Failed, {request.Header.Name} is unknown" }));
         }
 
         private async Task<JObject> PerformEchoRequest(JObject payload, Configuration config, ILambdaContext lambdaContext)
