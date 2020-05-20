@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using Akka.Actor;
 using Akka.Event;
 using ZoolWay.Aloxi.Bridge.Models;
@@ -12,6 +10,7 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
         private readonly ILoggingAdapter log = Logging.GetLogger(Context);
         private readonly LoxoneConfig loxoneConfig;
         private IActorRef modelLoader;
+        private IActorRef sender;
         private Home model;
         private ICancelable scheduledModelUpdates;
 
@@ -19,7 +18,9 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
         {
             this.loxoneConfig = loxoneConfig;
             this.modelLoader = ActorRefs.Nobody;
+            this.sender = ActorRefs.Nobody;
 
+            Receive<LoxoneMessage.ControlSwitch>(m => this.sender.Forward(m));
             Receive<LoxoneMessage.UpdatedModel>(ReceivedUpdatedModel);
             Receive<LoxoneMessage.InitAdapter>(ReceivedInitAdapter);
         }
@@ -27,12 +28,14 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
         protected override void PreStart()
         {
             this.modelLoader = Context.ActorOf(Props.Create(() => new ModelLoaderActor(this.loxoneConfig)));
+            this.sender = Context.ActorOf(Props.Create(() => new SenderActor(this.loxoneConfig)));
         }
 
         protected override void PostStop()
         {
             this.scheduledModelUpdates.CancelIfNotNull();
             this.modelLoader = ActorRefs.Nobody;
+            this.sender = ActorRefs.Nobody;
         }
 
         private void ReceivedUpdatedModel(LoxoneMessage.UpdatedModel message)
