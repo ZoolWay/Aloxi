@@ -73,17 +73,6 @@ namespace ZoolWay.Aloxi.Bridge
             // build meta
             this.metaProcessor = this.actorSystem.ActorOf(Props.Create(() => new Meta.MetaProcessorActor(this.mqttManager)), "meta");
 
-            // build alexa
-            this.alexaAdapter = ActorRefs.Nobody;
-            try
-            {
-                this.alexaAdapter = this.actorSystem.ActorOf(Props.Create(() => new Alexa.AdapterActor(this.mqttManager)),  "alexa");
-            }
-            catch (Exception ex)
-            {
-                log.LogError(ex, "Initializing of Alexa node failed");
-            }
-
             // build Loxone (will publish model-updates so build model-receivers before it!)
             this.loxoneAdapter = ActorRefs.Nobody;
             try
@@ -97,6 +86,18 @@ namespace ZoolWay.Aloxi.Bridge
             {
                 log.LogError(ex, "Initializing of Loxone node failed");
             }
+
+            // build alexa
+            this.alexaAdapter = ActorRefs.Nobody;
+            try
+            {
+                this.alexaAdapter = this.actorSystem.ActorOf(Props.Create(() => new Alexa.AdapterActor(this.mqttManager, this.loxoneAdapter)),  "alexa");
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Initializing of Alexa node failed");
+            }
+
 
             // configurations
             this.mqttManager.Tell(new MqttMessage.RegisterProcessor(Models.AloxiMessageOperation.Echo, this.metaProcessor));

@@ -20,5 +20,19 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
                 this.Model = model;
             }
         }
+
+        public class ControlSwitch : LoxoneMessage
+        {
+            public enum DesiredStateType { On, Off, ByUuid };
+
+            public string LoxoneUuid { get; }
+            public DesiredStateType DesiredState { get; }
+
+            public ControlSwitch(string loxoneUuid,  DesiredStateType desiredState)
+            {
+                this.LoxoneUuid = loxoneUuid;
+                this.DesiredState = desiredState;
+            }
+        }
     }
 }
