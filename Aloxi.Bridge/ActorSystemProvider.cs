@@ -7,6 +7,7 @@ using Akka.Configuration;
 using Akka.Logger.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using ZoolWay.Aloxi.Bridge.Loxone;
 using ZoolWay.Aloxi.Bridge.Mqtt;
 
 namespace ZoolWay.Aloxi.Bridge
@@ -73,7 +74,7 @@ namespace ZoolWay.Aloxi.Bridge
             // build meta
             this.metaProcessor = this.actorSystem.ActorOf(Props.Create(() => new Meta.MetaProcessorActor(this.mqttManager)), "meta");
 
-            // build Loxone (will publish model-updates so build model-receivers before it!)
+            // build Loxone
             this.loxoneAdapter = ActorRefs.Nobody;
             try
             {
@@ -98,10 +99,10 @@ namespace ZoolWay.Aloxi.Bridge
                 log.LogError(ex, "Initializing of Alexa node failed");
             }
 
-
-            // configurations
+            // init and configuration
             this.mqttManager.Tell(new MqttMessage.RegisterProcessor(Models.AloxiMessageOperation.Echo, this.metaProcessor));
             this.mqttManager.Tell(new MqttMessage.RegisterProcessor(Models.AloxiMessageOperation.PipeAlexaRequest, this.alexaAdapter));
+            this.loxoneAdapter.Tell(new LoxoneMessage.InitAdapter());
         }
     }
 }

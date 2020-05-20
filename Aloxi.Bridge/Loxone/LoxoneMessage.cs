@@ -7,6 +7,10 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
     [ImmutableObject(true)]
     public abstract class LoxoneMessage
     {
+        public class InitAdapter : LoxoneMessage
+        {
+        }
+
         public class LoadModel : LoxoneMessage
         {
         }
