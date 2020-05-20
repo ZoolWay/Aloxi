@@ -34,3 +34,19 @@ TODO: Cover how to configure AWS IoT Core
   - Under "security" of the object, attach a policy (those are not global IAM policies) and activate the cert if not alread active.
 
 
+# TODO
+
+- REST Statuscontroller
+  - Show home model
+  - Publish all errors and warning to a max-buffer and show them
+- Error/Warn/Info buffered log
+  - Supply logs to REST statuscontroller
+  - Special error states should trigger virtual-input of loxone which triggers push-notification
+    - errors occured
+    - not connected for some time
+- Dimable light controller
+- Jalousine controller
+- SONOS adapter
+  - list devices/groups
+  - make them available named for virtual output in loxone
+
