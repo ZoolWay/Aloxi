@@ -18,14 +18,16 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
         private readonly ILoggingAdapter log = Logging.GetLogger(Context);
         private readonly JsonSerializer jsonSerializer;
         private readonly JsonSerializerSettings jsonSettings;
+        private readonly JsonLoadSettings jsonLoadSettings;
         private readonly Encoding jsonEncoding;
         private readonly MqttConfig mqttConfig;
         private readonly string topic;
+        private readonly string alexaResponseTopic;
         private readonly IActorRef manager;
         private readonly Dictionary<AloxiMessageOperation, List<IActorRef>> processors;
         private MqttClient client;
 
-        public SubscriptionActor(IActorRef manager, MqttConfig mqttConfig, string topic)
+        public SubscriptionActor(IActorRef manager, MqttConfig mqttConfig, string topic, string alexaResponseTopic)
         {
             this.jsonSettings = new JsonSerializerSettings() { ContractResolver = new CamelCasePropertyNamesContractResolver() };
             this.jsonSerializer = JsonSerializer.CreateDefault(jsonSettings);
@@ -33,10 +35,12 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
             this.manager = manager;
             this.mqttConfig = mqttConfig;
             this.topic = topic;
+            this.alexaResponseTopic = alexaResponseTopic;
             this.processors = new Dictionary<AloxiMessageOperation, List<IActorRef>>();
 
             Receive<MqttMessage.Received>(ReceivedReceived);
             Receive<MqttMessage.Publish>(ReceivedPublish);
+            Receive<MqttMessage.PublishAlexaResponse>(ReceivedPublishAlexaResponse);
             Receive<MqttMessage.RegisterProcessor>(ReceivedRegisterProcessor);
         }
 
@@ -72,13 +76,17 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
 
         private void ReceivedPublish(MqttMessage.Publish message)
         {
-            JObject payload = JObject.FromObject(JsonConvert.DeserializeObject(message.Payload, this.jsonSettings), this.jsonSerializer);
+            JObject payload = StringToJObject(message.Payload);
             var aloxiMessage = AloxiMessage.Build(message.Operation, payload, message.ResponseTopic);
-            byte[] data = this.jsonEncoding.GetBytes(JsonConvert.SerializeObject(aloxiMessage, this.jsonSettings));
-            this.client.Publish(message.Topic, data);
-            log.Debug("Published {0} bytes to topic '{1}'", data.Length, message.Topic);
+            PublishAloxiMessage(aloxiMessage, message.Topic);
         }
 
+        private void ReceivedPublishAlexaResponse(MqttMessage.PublishAlexaResponse message)
+        {
+            JObject payload = StringToJObject(message.SerializedResponse);
+            var aloxiMessage = AloxiMessage.Build(AloxiMessageOperation.PipeAlexaResponse, payload);
+            PublishAloxiMessage(aloxiMessage, this.alexaResponseTopic);
+        }
 
         private void ReceivedReceived(MqttMessage.Received message)
         {
@@ -124,6 +132,16 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
             this.processors[message.Operation].Add(message.Processor);
         }
 
+        private void PublishAloxiMessage(AloxiMessage aloxiMessage, string topic)
+        {
+            byte[] data = this.jsonEncoding.GetBytes(JsonConvert.SerializeObject(aloxiMessage, this.jsonSettings));
+            this.client.Publish(topic, data);
+            log.Debug("Published {0} bytes to topic '{1}'", data.Length, topic);
+        }
 
+        private JObject StringToJObject(string data)
+        {
+            return JObject.FromObject(JsonConvert.DeserializeObject(data, this.jsonSettings), this.jsonSerializer);
+        }
     }
 }

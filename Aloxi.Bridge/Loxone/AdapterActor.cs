@@ -38,6 +38,7 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
         private void ReceivedUpdatedModel(LoxoneMessage.UpdatedModel message)
         {
             this.model = message.Model;
+            Context.System.EventStream.Publish(new Bus.HomeModelUpdatedEvent(message.Model));
             log.Info("Got model with {0} controls", this.model.Controls.Count);
         }
     }

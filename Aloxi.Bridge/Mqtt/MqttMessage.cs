@@ -81,5 +81,15 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
                 this.ResponseTopic = responseTopic;
             }
         }
+
+        public class PublishAlexaResponse : MqttMessage
+        {
+            public string SerializedResponse { get; }
+
+            public PublishAlexaResponse(string serializedResponse)
+            {
+                this.SerializedResponse = serializedResponse;
+            }
+        }
     }
 }

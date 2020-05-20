@@ -62,7 +62,8 @@ namespace ZoolWay.Aloxi.Bridge
                 var c = configuration.GetSection("Mqtt");
                 var mqttConfig = new Mqtt.MqttConfig(c["Endpoint"], c["CaPath"], c["CertPath"], c["ClientId"]);
                 string subscriptionTopic = c["SubscriptionTopic"];
-                this.mqttManager = this.actorSystem.ActorOf(Props.Create(() => new Mqtt.ManagerActor(mqttConfig, subscriptionTopic)), "mqtt");
+                string alexaResponseTopic = c["AlexaResponseTopic"];
+                this.mqttManager = this.actorSystem.ActorOf(Props.Create(() => new Mqtt.ManagerActor(mqttConfig, subscriptionTopic, alexaResponseTopic)), "mqtt");
             }
             catch (Exception ex)
             {
@@ -72,29 +73,29 @@ namespace ZoolWay.Aloxi.Bridge
             // build meta
             this.metaProcessor = this.actorSystem.ActorOf(Props.Create(() => new Meta.MetaProcessorActor(this.mqttManager)), "meta");
 
-            // build Loxone
+            // build alexa
+            this.alexaAdapter = ActorRefs.Nobody;
+            try
+            {
+                this.alexaAdapter = this.actorSystem.ActorOf(Props.Create(() => new Alexa.AdapterActor(this.mqttManager)),  "alexa");
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Initializing of Alexa node failed");
+            }
+
+            // build Loxone (will publish model-updates so build model-receivers before it!)
             this.loxoneAdapter = ActorRefs.Nobody;
             try
             {
                 var c = configuration.GetSection("Loxone");
-                ImmutableArray<string> ignoreCats = c.GetSection("IgnoreCategoriesX").GetChildren().ToList().Select(x => x.Value).ToImmutableArray();
+                ImmutableArray<string> ignoreCats = c.GetSection("IgnoreCategories").GetChildren().ToList().Select(x => x.Value).ToImmutableArray();
                 var loxoneConfig = new Loxone.LoxoneConfig(c["Miniserver"], c["Username"], c["Password"], ignoreCats);
                 this.loxoneAdapter = this.actorSystem.ActorOf(Props.Create(() => new Loxone.AdapterActor(loxoneConfig)), "loxone");
             }
             catch (Exception ex)
             {
                 log.LogError(ex, "Initializing of Loxone node failed");
-            }
-
-            // build alexa
-            this.alexaAdapter = ActorRefs.Nobody;
-            try
-            {
-                this.alexaAdapter = this.actorSystem.ActorOf(Props.Create(() => new Alexa.AdapterActor()),  "alexa");
-            }
-            catch (Exception ex)
-            {
-                log.LogError(ex, "Initializing of Alexa node failed");
             }
 
             // configurations
