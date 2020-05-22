@@ -45,11 +45,11 @@ namespace ZoolWay.Aloxi.AlexaAdapter
             if ((level == "ERROR") && (!LevelMatches("ERROR"))) return;
             if (String.IsNullOrWhiteSpace(context?.AwsRequestId))
             {
-                LambdaLogger.Log($"{level.ToUpper()}  {message}");
+                LambdaLogger.Log($"{level.ToUpper()}  {message}\n");
             }
             else
             {
-                LambdaLogger.Log($"{level.ToUpper()} RequestId: {context.AwsRequestId}  {message}");
+                LambdaLogger.Log($"{level.ToUpper()} RequestId: {context.AwsRequestId}  {message}\n");
             }
         }
 
