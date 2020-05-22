@@ -24,10 +24,12 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
         private static readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings() { ContractResolver = new CamelCasePropertyNamesContractResolver() };
 
         private readonly Configuration configuration;
+        private readonly ILambdaContext lambdaContext;
 
-        public PubSubClient(Configuration config)
+        public PubSubClient(Configuration config, ILambdaContext lambdaContext)
         {
             this.configuration = config;
+            this.lambdaContext = lambdaContext;
         }
 
         public void Publish(string toTopic, AloxiMessage message)
@@ -76,11 +78,11 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
                 var subClient = CreateClient();
                 subClient.MqttMsgSubscribed += (sender, e) =>
                 {
-                    Log.Debug("subscribed");
+                    Log.Debug(this.lambdaContext, "subscribed");
                 };
                 subClient.MqttMsgPublishReceived += (sender, e) =>
                 {
-                    Log.Debug("received");
+                    Log.Debug(this.lambdaContext, "received");
                     try
                     {
                         AloxiMessage m = translateFromBytes(e.Message);
@@ -90,14 +92,14 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
                     }
                     catch (Exception ex)
                     {
-                        Log.Error($"Received message could not be processed: {ex.Message}"); // ignore message
+                        Log.Error(this.lambdaContext, $"Received message could not be processed: {ex.Message}"); // ignore message
                     }
                 };
                 subClient.Subscribe(new string[] { responseTopic }, new byte[] { MqttMsgBase.QOS_LEVEL_AT_MOST_ONCE });
                 try
                 {
                     bool receivedSignal = manualResetEvent.WaitOne(MAX_RESPONSE_WAIT_MS);
-                    if (!receivedSignal) Log.Error($"Did not get response within {MAX_RESPONSE_WAIT_MS}ms (expected on topic {responseTopic})");
+                    if (!receivedSignal) Log.Error(this.lambdaContext, $"Did not get response within {MAX_RESPONSE_WAIT_MS}ms (expected on topic {responseTopic})");
                 }
                 catch (Exception ex)
                 {
@@ -132,11 +134,11 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
             {
                 if (!String.IsNullOrEmpty(this.configuration.CertPath))
                 {
-                    client = ConstructClientBasedOnCertificate(this.configuration.Endpoint, this.configuration.CaPath, this.configuration.CertPath);
+                    client = ConstructClientBasedOnCertificate(this.lambdaContext, this.configuration.Endpoint, this.configuration.CaPath, this.configuration.CertPath);
                 }
                 else
                 {
-                    client = ConstructClientDirectlyInAws(this.configuration.Endpoint);
+                    client = ConstructClientDirectlyInAws(this.lambdaContext, this.configuration.Endpoint);
                 }
                 String clientId = $"{this.configuration.ClientId}_{Guid.NewGuid().ToString()}";
                 client.Connect(clientId);
@@ -148,7 +150,7 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
             return client;
         }
 
-        private static MqttClient ConstructClientBasedOnCertificate(string endpoint, string caPath, string certPath)
+        private static MqttClient ConstructClientBasedOnCertificate(ILambdaContext context, string endpoint, string caPath, string certPath)
         {
             if (!Path.IsPathRooted(certPath))
             {
@@ -167,15 +169,15 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
                 caPath = Path.Join(basePath, caPath);
                 certPath = Path.Join(basePath, certPath);
             }
-            Log.Debug($"Creating MQTT client with certificate from {Path.GetDirectoryName(certPath)}");
+            Log.Debug(context, $"Creating MQTT client with certificate from {Path.GetDirectoryName(certPath)}");
             X509Certificate caCert = X509Certificate.CreateFromCertFile(caPath);
             X509Certificate2 clientCert = new X509Certificate2(certPath, (String)null, X509KeyStorageFlags.Exportable);
             return new MqttClient(endpoint, BROKER_PORT, true, caCert, clientCert, MqttSslProtocols.TLSv1_2);
         }
 
-        private static MqttClient ConstructClientDirectlyInAws(string endpoint)
+        private static MqttClient ConstructClientDirectlyInAws(ILambdaContext  context, string endpoint)
         {
-            Log.Debug("Creating direct MQTT client");
+            Log.Debug(context, "Creating direct MQTT client");
             return new MqttClient(endpoint);
         }
 

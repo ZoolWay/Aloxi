@@ -29,13 +29,13 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
 
         protected async Task<JObject> PerformPassthroughRequest(AlexaSmartHomeRequest request, Configuration config, ILambdaContext lambdaContext)
         {
-            var client = new PubSubClient(config);
+            var client = new PubSubClient(config, lambdaContext);
 
             var sw = Stopwatch.StartNew();
             JObject response = await client.RequestBridgePassthrough(Meta.AloxiMessageOperation.PipeAlexaRequest, JObject.FromObject(request, this.json));
             sw.Stop();
 
-            Log.Info($"Successful passthrough, took {sw.Elapsed.TotalSeconds}s");
+            Log.Info(lambdaContext, $"Successful passthrough, took {sw.Elapsed.TotalSeconds}s");
             return response;
         }
 

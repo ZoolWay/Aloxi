@@ -10,6 +10,7 @@
         "TOPIC_BRIDGE": "aloxi:to-bridge",
         "CERT_PATH": "../../../../bridge/config/badb237f72-certificate.pfx",
         "CLIENT_ID": "aloxi-alexa-adapter",
+        "LAMBDA_LOG": "DEBUG",
         "ENDPOINT": "a1fk2tqo498isz-ats.iot.eu-west-1.amazonaws.com",
         "CA_PATH": "../../../../bridge/config/AmazonRootCA1.pem"
       }

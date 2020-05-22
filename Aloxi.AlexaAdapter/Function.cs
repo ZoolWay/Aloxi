@@ -26,7 +26,7 @@ namespace ZoolWay.Aloxi.AlexaAdapter
 
             var alexaRequest = request.ToObject<AlexaSmartHomeRequest>();
             if (alexaRequest.Header == null) throw new Exception("Invalid request, header missing");
-            Log.Debug($"Checking request in namespace {alexaRequest.Header.Namespace}");
+            Log.Debug(context, $"Checking request in namespace {alexaRequest.Header.Namespace}");
 
             AbstractProcessor processor = null;
             switch (alexaRequest.Header.Namespace)
@@ -46,9 +46,9 @@ namespace ZoolWay.Aloxi.AlexaAdapter
             }
             if (processor == null) throw new Exception($"Namespace {alexaRequest.Header.Namespace} is not supported");
 
-            Log.Info($"Sending request '{alexaRequest.Header.Name}' to processor '{processor.Name}'");
+            Log.Info(context, $"Sending request '{alexaRequest.Header.Name}' to processor '{processor.Name}'");
             var response = await processor.ProcessRequest(alexaRequest, context);
-            Log.Debug("Returning response...");
+            Log.Debug(context, "Returning response...");
 
             return response;
         }

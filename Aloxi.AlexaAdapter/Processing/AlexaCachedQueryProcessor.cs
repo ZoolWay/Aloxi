@@ -12,7 +12,7 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
 
         public override async Task<JObject> ProcessRequest(AlexaSmartHomeRequest request, ILambdaContext lambdaContext)
         {
-            Log.Warn("Caching not yet implemented!");
+            Log.Warn(lambdaContext, "Caching not yet implemented!");
             // TODO
             // check the cache
             // function is stateless, what media is used for the cache?
