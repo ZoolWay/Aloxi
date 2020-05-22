@@ -56,6 +56,7 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
             return PublishAndAwaitResponse(configuration.TopicBridge, requestMessage)
                 .ContinueWith<JObject>((publishTask) =>
                 {
+                    Log.Debug(this.lambdaContext, $"PSC/RBP: Continueing with {publishTask?.Result?.Data?.Count} datanodes");
                     var responseMessage = publishTask.Result;
                     if (responseMessage == null) return null;
                     return responseMessage.Data;
@@ -76,30 +77,33 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
                 AloxiMessage responseData = null;
 
                 var subClient = CreateClient();
+                Log.Debug(this.lambdaContext, "PSC/PAAR/Listen: ListenTask got client and connected");
                 subClient.MqttMsgSubscribed += (sender, e) =>
                 {
-                    Log.Debug(this.lambdaContext, "subscribed");
+                    Log.Debug(this.lambdaContext, "PSC/PAAR/Listen: subscribed");
                 };
                 subClient.MqttMsgPublishReceived += (sender, e) =>
                 {
-                    Log.Debug(this.lambdaContext, "received");
+                    Log.Debug(this.lambdaContext, "PSC/PAAR/Listen: received");
                     try
                     {
                         AloxiMessage m = translateFromBytes(e.Message);
                         if (m.Type != AloxiMessageType.AloxiComm) return;
                         responseData = m;
                         manualResetEvent.Set();
+                        Log.Debug(this.lambdaContext, "PSC/PAAR/Listen: manual reset event completed");
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(this.lambdaContext, $"Received message could not be processed: {ex.Message}"); // ignore message
+                        Log.Error(this.lambdaContext, $"PSC/PAAR/Listen: Received message could not be processed: {ex.Message}"); // ignore message
                     }
                 };
-                subClient.Subscribe(new string[] { responseTopic }, new byte[] { MqttMsgBase.QOS_LEVEL_AT_MOST_ONCE });
+                var subscribeFlag = subClient.Subscribe(new string[] { responseTopic }, new byte[] { MqttMsgBase.QOS_LEVEL_AT_MOST_ONCE });
+                Log.Debug(this.lambdaContext, $"PSC/PAAR/Listen: Subscribed response topic '{responseTopic}', return flag = {subscribeFlag}");
                 try
                 {
                     bool receivedSignal = manualResetEvent.WaitOne(MAX_RESPONSE_WAIT_MS);
-                    if (!receivedSignal) Log.Error(this.lambdaContext, $"Did not get response within {MAX_RESPONSE_WAIT_MS}ms (expected on topic {responseTopic})");
+                    if (!receivedSignal) Log.Error(this.lambdaContext, $"PSC/PAAR/Listen: Did not get response within {MAX_RESPONSE_WAIT_MS}ms (expected on topic {responseTopic})");
                 }
                 catch (Exception ex)
                 {
@@ -110,18 +114,24 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
                     subClient.Disconnect();
                 }
 
+                Log.Debug(this.lambdaContext, $"PSC/PAAR/Listen: Returning from ListenTask with: {responseData?.GetType().FullName}");
                 return responseData;
             });
 
             // publish message (using seperate client)
             var pubClient = CreateClient();
-            pubClient.Publish(toTopic, translateToBytes(message));
+            Log.Debug(this.lambdaContext, "PSC/PAAR: PublishingTask got client and connected");
+            var publishFlag = pubClient.Publish(toTopic, translateToBytes(message));
+            Log.Debug(this.lambdaContext, $"PSC/PAAR: Published to topic '{toTopic}', return flag = {publishFlag}");
 
             // wait for listen to complete or timing out
             Task waitingTask = Task.Delay(MAX_RESPONSE_WAIT_MS);
+            Log.Debug(this.lambdaContext, $"PSC/PAAR: Task {waitingTask.Id} is waiting task, task {listenTask.Id} is listen task");
             Task completedTask = await Task.WhenAny(listenTask, waitingTask);
+            Log.Debug(this.lambdaContext, $"PSC/PAAR: Any task completed, id = {completedTask.Id}");
             if (Object.ReferenceEquals(completedTask, listenTask))
             {
+                Log.Debug(this.lambdaContext, $"PSC/PAAR: Returning data from listenTask is of type {listenTask.Result?.GetType().FullName}");
                 return listenTask.Result;
             }
             return null;
@@ -140,13 +150,16 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
                 {
                     client = ConstructClientDirectlyInAws(this.lambdaContext, this.configuration.Endpoint);
                 }
-                String clientId = $"{this.configuration.ClientId}_{Guid.NewGuid().ToString()}";
+                string clientId = $"{this.configuration.ClientId}_{Guid.NewGuid().ToString()}";
+                Log.Debug(this.lambdaContext, $"PSC/CC: Client constructed, now connectting with id '{clientId}'");
                 client.Connect(clientId);
             }
             catch (Exception ex)
             {
+                Log.Error(this.lambdaContext, $"PSC/CC: Failure during construction and connection: {ex.Message}");
                 throw new Exception($"Failed to construct and connect MQTT client", ex);
             }
+            Log.Debug(this.lambdaContext, "PSC/CC: Returning client");
             return client;
         }
 
@@ -169,7 +182,7 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
                 caPath = Path.Join(basePath, caPath);
                 certPath = Path.Join(basePath, certPath);
             }
-            Log.Debug(context, $"Creating MQTT client with certificate from {Path.GetDirectoryName(certPath)}");
+            Log.Debug(context, $"PSC/CCBOC: Creating MQTT client with certificate from {Path.GetDirectoryName(certPath)}");
             X509Certificate caCert = X509Certificate.CreateFromCertFile(caPath);
             X509Certificate2 clientCert = new X509Certificate2(certPath, (String)null, X509KeyStorageFlags.Exportable);
             return new MqttClient(endpoint, BROKER_PORT, true, caCert, clientCert, MqttSslProtocols.TLSv1_2);
@@ -177,7 +190,7 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
 
         private static MqttClient ConstructClientDirectlyInAws(ILambdaContext  context, string endpoint)
         {
-            Log.Debug(context, "Creating direct MQTT client");
+            Log.Debug(context, "PSC/CCDIA: Creating direct MQTT client");
             return new MqttClient(endpoint);
         }
 

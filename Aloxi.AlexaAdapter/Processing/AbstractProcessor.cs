@@ -31,6 +31,7 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
         {
             var client = new PubSubClient(config, lambdaContext);
 
+            Log.Debug(lambdaContext, "Starting passthrough...");
             var sw = Stopwatch.StartNew();
             JObject response = await client.RequestBridgePassthrough(Meta.AloxiMessageOperation.PipeAlexaRequest, JObject.FromObject(request, this.json));
             sw.Stop();
