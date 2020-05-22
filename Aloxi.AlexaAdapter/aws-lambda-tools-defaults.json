@@ -11,7 +11,7 @@
     "configuration" : "Release",
     "framework"     : "netcoreapp3.1",
     "function-runtime" : "dotnetcore3.1",
-    "function-memory-size" : 192,
+    "function-memory-size" : 128,
     "function-timeout"     : 3,
     "function-handler"     : "Aloxi.AlexaAdapter::ZoolWay.Aloxi.AlexaAdapter.Function::FunctionHandler",
     "function-name"        : "aloxi-alexa-adapter",
