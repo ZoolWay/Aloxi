@@ -36,7 +36,14 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
             JObject response = await client.RequestBridgePassthrough(Meta.AloxiMessageOperation.PipeAlexaRequest, JObject.FromObject(request, this.json));
             sw.Stop();
 
-            Log.Info(lambdaContext, $"Successful passthrough, took {sw.Elapsed.TotalSeconds}s");
+            if (response == null)
+            {
+                Log.Warn(lambdaContext, $"Passthrough completed in {sw.Elapsed.TotalSeconds}s without result");
+            }
+            else
+            {
+                Log.Info(lambdaContext, $"Successful passthrough, took {sw.Elapsed.TotalSeconds}s");
+            }
             return response;
         }
 

@@ -19,6 +19,7 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
     internal class PubSubClient
     {
         private const int MAX_RESPONSE_WAIT_MS = 1500;
+        private const int MAX_RESPONSE_RESETEVENT_WAIT_MS = MAX_RESPONSE_WAIT_MS * 2;
         private static readonly int BROKER_PORT = 8883;
         private static readonly Encoding ENCODING = Encoding.UTF8;
         private static readonly JsonSerializer jsonSerializer = JsonSerializer.CreateDefault(jsonSettings);
@@ -58,10 +59,13 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
             return PublishAndAwaitResponse(configuration.TopicBridge, requestMessage)
                 .ContinueWith<JObject>((publishTask) =>
                 {
+                    if (publishTask.Result == null)
+                    {
+                        Log.Warn(this.lambdaContext, $"PSC/RBP: Passing NULL throught (we did not get a response?)");
+                        return null;
+                    }
                     Log.Debug(this.lambdaContext, $"PSC/RBP: Continueing with {publishTask?.Result?.Data?.Count} datanodes");
-                    var responseMessage = publishTask.Result;
-                    if (responseMessage == null) return null;
-                    return responseMessage.Data;
+                    return publishTask.Result.Data;
                 });
         }
 
@@ -102,10 +106,11 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
                 };
                 var subscribeFlag = subClient.Subscribe(new string[] { responseTopic }, new byte[] { MqttMsgBase.QOS_LEVEL_AT_MOST_ONCE });
                 Log.Debug(this.lambdaContext, $"PSC/PAAR/Listen: Subscribed response topic '{responseTopic}', return flag = {subscribeFlag}");
+                bool? receivedSignal = null;
                 try
                 {
-                    bool receivedSignal = manualResetEvent.WaitOne(MAX_RESPONSE_WAIT_MS);
-                    if (!receivedSignal) Log.Error(this.lambdaContext, $"PSC/PAAR/Listen: Did not get response within {MAX_RESPONSE_WAIT_MS}ms (expected on topic {responseTopic})");
+                    receivedSignal = manualResetEvent.WaitOne(MAX_RESPONSE_RESETEVENT_WAIT_MS);
+                    if (!receivedSignal.Value) Log.Error(this.lambdaContext, $"PSC/PAAR/Listen: Did not get response within {MAX_RESPONSE_WAIT_MS}ms (expected on topic {responseTopic})");
                 }
                 catch (Exception ex)
                 {
@@ -116,7 +121,7 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
                     subClient.Disconnect();
                 }
 
-                Log.Debug(this.lambdaContext, $"PSC/PAAR/Listen: Returning from ListenTask with: {responseData?.GetType().FullName}");
+                Log.Debug(this.lambdaContext, $"PSC/PAAR/Listen: Returning from ListenTask, receivedSignal={receivedSignal}, data type={responseData?.GetType().FullName}.");
                 return responseData;
             });
 
@@ -137,8 +142,16 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
             Log.Debug(this.lambdaContext, $"PSC/PAAR: A task completed, id #{completedTask.Id}, is {taskname}");
             if (Object.ReferenceEquals(completedTask, listenTask))
             {
-                Log.Debug(this.lambdaContext, $"PSC/PAAR: Returning data from listenTask is of type {listenTask.Result?.GetType().FullName}");
-                return listenTask.Result;
+                if (listenTask.Result == null)
+                {
+                    Log.Warn(this.lambdaContext, $"PSC/PAAR: Returning NULL as the listenTask returned it!");
+                    return null;
+                }
+                else
+                {
+                    Log.Debug(this.lambdaContext, $"PSC/PAAR: Returning data from listenTask is of type {listenTask.Result?.GetType().FullName}");
+                    return listenTask.Result;
+                }
             }
             Log.Warn(this.lambdaContext, $"PSC/PAAR: Returning NULL as we got not answer in time!");
             return null;
