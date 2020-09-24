@@ -20,4 +20,12 @@
     <PackageReference Include="M2MqttDotnetCore" Version="1.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
+  <ItemGroup>
+    <None Update="embed-cert\AmazonRootCA1.pem">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="embed-cert\badb237f72-certificate.pfx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>
