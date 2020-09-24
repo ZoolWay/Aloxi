@@ -129,14 +129,18 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
 
             // wait for listen to complete or timing out
             Task waitingTask = Task.Delay(MAX_RESPONSE_WAIT_MS);
-            Log.Debug(this.lambdaContext, $"PSC/PAAR: Task {waitingTask.Id} is waiting task, task {listenTask.Id} is listen task");
+            Log.Debug(this.lambdaContext, $"PSC/PAAR: Task id #{waitingTask.Id} is waiting task, task id #{listenTask.Id} is listen task");
             Task completedTask = await Task.WhenAny(listenTask, waitingTask);
-            Log.Debug(this.lambdaContext, $"PSC/PAAR: Any task completed, id = {completedTask.Id}");
+            string taskname = "unknown";
+            if (Object.ReferenceEquals(completedTask, listenTask)) taskname = "LISTEN";
+            if (Object.ReferenceEquals(completedTask, waitingTask)) taskname = "WAITING";
+            Log.Debug(this.lambdaContext, $"PSC/PAAR: A task completed, id #{completedTask.Id}, is {taskname}");
             if (Object.ReferenceEquals(completedTask, listenTask))
             {
                 Log.Debug(this.lambdaContext, $"PSC/PAAR: Returning data from listenTask is of type {listenTask.Result?.GetType().FullName}");
                 return listenTask.Result;
             }
+            Log.Warn(this.lambdaContext, $"PSC/PAAR: Returning NULL as we got not answer in time!");
             return null;
         }
 
