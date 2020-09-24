@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
@@ -53,6 +54,7 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
         public Task<JObject> RequestBridgePassthrough(AloxiMessageOperation operation, JObject payload)
         {
             var requestMessage = AloxiMessage.Build(operation, payload, this.configuration.TopicResponse);
+            Log.Debug(this.lambdaContext, $"PSC/RBP: Publishing AloxiMessage '{operation}' and waiting for response");
             return PublishAndAwaitResponse(configuration.TopicBridge, requestMessage)
                 .ContinueWith<JObject>((publishTask) =>
                 {
@@ -68,9 +70,9 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
             if (String.IsNullOrWhiteSpace(message.ResponseTopic)) throw new Exception("ResponseTopic is required for PublishAndAwaitResponse");
 
             string responseTopic = message.ResponseTopic;
-            CancellationTokenSource cts = new CancellationTokenSource(3000);
 
             // start "listen" task
+            Log.Debug(this.lambdaContext, "Starting ListenTask");
             Task<AloxiMessage> listenTask = Task<AloxiMessage>.Run<AloxiMessage>(() =>
             {
                 ManualResetEvent manualResetEvent = new ManualResetEvent(false);
@@ -119,6 +121,7 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
             });
 
             // publish message (using seperate client)
+            Log.Debug(this.lambdaContext, "Creating client");
             var pubClient = CreateClient();
             Log.Debug(this.lambdaContext, "PSC/PAAR: PublishingTask got client and connected");
             var publishFlag = pubClient.Publish(toTopic, translateToBytes(message));
@@ -152,7 +155,8 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
                 }
                 string clientId = $"{this.configuration.ClientId}_{Guid.NewGuid().ToString()}";
                 Log.Debug(this.lambdaContext, $"PSC/CC: Client constructed, now connectting with id '{clientId}'");
-                client.Connect(clientId);
+                byte flag = client.Connect(clientId);
+                Log.Debug(this.lambdaContext, $"PSC/CC: Client connected with flag = {flag}");
             }
             catch (Exception ex)
             {
@@ -191,7 +195,17 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
         private static MqttClient ConstructClientDirectlyInAws(ILambdaContext  context, string endpoint)
         {
             Log.Debug(context, "PSC/CCDIA: Creating direct MQTT client");
-            return new MqttClient(endpoint);
+            return new MqttClient(endpoint, BROKER_PORT, true, MqttSslProtocols.TLSv1_2, new RemoteCertificateValidationCallback(Rcvc), new LocalCertificateSelectionCallback(Lcsc));
+        }
+
+        private static X509Certificate Lcsc(object sender, string targetHost, X509CertificateCollection localCertificates, X509Certificate remoteCertificate, string[] acceptableIssuers)
+        {
+            return null;
+        }
+
+        private static bool Rcvc(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            return true;
         }
 
         protected JObject Pack(object payload)
