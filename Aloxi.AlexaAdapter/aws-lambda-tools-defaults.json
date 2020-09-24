@@ -12,7 +12,7 @@
     "framework"     : "netcoreapp3.1",
     "function-runtime" : "dotnetcore3.1",
     "function-memory-size" : 128,
-    "function-timeout"     : 3,
+    "function-timeout"     : 20,
     "function-handler"     : "Aloxi.AlexaAdapter::ZoolWay.Aloxi.AlexaAdapter.Function::FunctionHandler",
     "function-name"        : "aloxi-alexa-adapter",
     "function-role"        : "arn:aws:iam::424588537670:role/service-role/aloxi-alexa-adapter-role-mdlz34ek",
