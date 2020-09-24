@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Net.Http;
 using System.Threading.Tasks;
+
+using Akka.Actor;
 using Akka.Event;
 
 namespace ZoolWay.Aloxi.Bridge.Loxone
@@ -7,10 +10,30 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
     public class SenderActor : LoxoneCommBaseActor
     {
         private readonly ILoggingAdapter log = Logging.GetLogger(Context);
+        private readonly Akka.Actor.IActorRef adapter;
 
-        public SenderActor(LoxoneConfig loxoneConfig) : base(loxoneConfig)
+        public SenderActor(LoxoneConfig loxoneConfig, Akka.Actor.IActorRef adapter) : base(loxoneConfig)
         {
+            this.adapter = adapter;
             ReceiveAsync<LoxoneMessage.ControlSwitch>(ReceivedControlSwitch);
+            ReceiveAsync<LoxoneMessage.TestAvailability>(ReceivedTestAvailability);
+        }
+
+        private async Task ReceivedTestAvailability(LoxoneMessage.TestAvailability message)
+        {
+            log.Debug($"Checking miniserver availability");
+            var client = GetLoxoneHttpClient();
+            try
+            {
+                var response = await client.GetAsync("dev/sps/status");
+                log.Debug("Miniserver is available");
+                this.adapter.Tell(new LoxoneMessage.ReportAvailability(true, DateTime.Now));
+            }
+            catch (HttpRequestException ex)
+            {
+                log.Error(ex, "Availability failed");
+                this.adapter.Tell(new LoxoneMessage.ReportAvailability(false, DateTime.Now));
+            }
         }
 
         private async Task ReceivedControlSwitch(LoxoneMessage.ControlSwitch message)
@@ -18,12 +41,21 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
             log.Debug($"Switch '{message.LoxoneUuid}' to '{message.DesiredState}'");
             string loxOp = TranslateToLoxoneOperation(message.DesiredState, message.LoxoneUuid);
             var client = GetLoxoneHttpClient();
-            var response = await client.GetAsync($"dev/sps/io/{message.LoxoneUuid}/{loxOp}");
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                var body = await response.Content.ReadAsStringAsync();
-                string errMsg = $"Loxone reported non-success HTTP code {response.StatusCode}";
-                log.Error(errMsg);
+                var response = await client.GetAsync($"dev/sps/io/{message.LoxoneUuid}/{loxOp}");
+                this.adapter.Tell(new LoxoneMessage.ReportAvailability(true, DateTime.Now));
+                if (!response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync();
+                    string errMsg = $"Loxone reported non-success HTTP code {response.StatusCode}";
+                    log.Error(errMsg);
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                log.Error(ex, "Failed to reach Loxone");
+                this.adapter.Tell(new LoxoneMessage.ReportAvailability(false, DateTime.Now));
             }
         }
 

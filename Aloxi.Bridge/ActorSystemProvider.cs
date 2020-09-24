@@ -8,6 +8,7 @@ using Akka.Logger.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ZoolWay.Aloxi.Bridge.Loxone;
+using ZoolWay.Aloxi.Bridge.Meta;
 using ZoolWay.Aloxi.Bridge.Mqtt;
 
 namespace ZoolWay.Aloxi.Bridge
@@ -21,6 +22,7 @@ namespace ZoolWay.Aloxi.Bridge
         private IActorRef metaProcessor;
         private IActorRef loxoneAdapter;
         private IActorRef alexaAdapter;
+        private IActorRef statusConsolidator;
 
         public ActorSystem ActorSystem 
         { 
@@ -36,6 +38,16 @@ namespace ZoolWay.Aloxi.Bridge
             get => this.mqttManager;
         }
 
+        public IActorRef LoxoneAdapter
+        {
+            get => this.loxoneAdapter;
+        }
+
+        public IActorRef StatusConsolidator
+        {
+            get => this.statusConsolidator;
+        }
+
         public ActorSystemProvider(IConfiguration configuration, ILogger<ActorSystemProvider> log, ILoggerFactory loggerFactory)
         {
             this.configuration = configuration;
@@ -44,6 +56,8 @@ namespace ZoolWay.Aloxi.Bridge
             this.mqttManager = ActorRefs.Nobody;
             this.metaProcessor = ActorRefs.Nobody;
             this.loxoneAdapter = ActorRefs.Nobody;
+            this.alexaAdapter = ActorRefs.Nobody;
+            this.statusConsolidator = ActorRefs.Nobody;
 
             LoggingLogger.LoggerFactory = loggerFactory;
         }
@@ -103,6 +117,9 @@ namespace ZoolWay.Aloxi.Bridge
             this.mqttManager.Tell(new MqttMessage.RegisterProcessor(Models.AloxiMessageOperation.Echo, this.metaProcessor));
             this.mqttManager.Tell(new MqttMessage.RegisterProcessor(Models.AloxiMessageOperation.PipeAlexaRequest, this.alexaAdapter));
             this.loxoneAdapter.Tell(new LoxoneMessage.InitAdapter());
+
+            // status consolidator
+            this.statusConsolidator = this.actorSystem.ActorOf(Props.Create(() => new StatusConsolidatorActor(this.loxoneAdapter, this.mqttManager)));
         }
     }
 }

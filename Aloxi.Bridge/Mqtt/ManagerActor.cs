@@ -24,6 +24,7 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
             Receive<MqttMessage.PublishAlexaResponse>((msg) => this.subscriber.Forward(msg));
             Receive<MqttMessage.Log>(ReceivedLog);
             Receive<MqttMessage.RegisterProcessor>((msg) => this.subscriber.Forward(msg));
+            Receive<MqttMessage.RequestState>((msg) => this.subscriber.Forward(msg));
         }
 
         protected override void PreStart()

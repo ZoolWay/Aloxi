@@ -8,10 +8,12 @@ namespace ZoolWay.Aloxi.Bridge.Bus
     public class HomeModelUpdatedEvent
     {
         public Home HomeModel { get; }
+        public DateTime UpdateTimestamp { get; }
 
-        public HomeModelUpdatedEvent(Home updatedHomeModel)
+        public HomeModelUpdatedEvent(Home updatedHomeModel, DateTime updateTimestamp)
         {
             this.HomeModel = updatedHomeModel;
+            this.UpdateTimestamp = updateTimestamp;
         }
     }
 }

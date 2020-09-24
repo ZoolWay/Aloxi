@@ -91,5 +91,35 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
                 this.SerializedResponse = serializedResponse;
             }
         }
+
+        public class RequestState : MqttMessage
+        {
+        }
+
+        public class StateConnectionClosed : MqttMessage
+        {
+        }
+
+        public class StateSubscribed : MqttMessage
+        {
+        }
+
+        public class StateUnsubscribed : MqttMessage
+        {
+        }
+
+        public class CurrentState : MqttMessage
+        {
+            public bool IsConnected { get; }
+            public bool IsSubscribed { get; }
+            public DateTime Timestamp { get; }
+
+            public CurrentState(bool isConnected, bool isSubscribed, DateTime timestamp)
+            {
+                this.IsConnected = isConnected;
+                this.IsSubscribed = isSubscribed;
+                this.Timestamp = timestamp;
+            }
+        }
     }
 }

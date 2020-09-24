@@ -26,6 +26,7 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
         private readonly IActorRef manager;
         private readonly Dictionary<AloxiMessageOperation, List<IActorRef>> processors;
         private MqttClient client;
+        private bool isSubscribed;
 
         public SubscriptionActor(IActorRef manager, MqttConfig mqttConfig, string topic, string alexaResponseTopic)
         {
@@ -37,11 +38,16 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
             this.topic = topic;
             this.alexaResponseTopic = alexaResponseTopic;
             this.processors = new Dictionary<AloxiMessageOperation, List<IActorRef>>();
+            this.isSubscribed = false;
 
             Receive<MqttMessage.Received>(ReceivedReceived);
             Receive<MqttMessage.Publish>(ReceivedPublish);
             Receive<MqttMessage.PublishAlexaResponse>(ReceivedPublishAlexaResponse);
             Receive<MqttMessage.RegisterProcessor>(ReceivedRegisterProcessor);
+            Receive<MqttMessage.StateConnectionClosed>(ReceivedStateConnectionClosed);
+            Receive<MqttMessage.StateSubscribed>(ReceivedStateSubscribed);
+            Receive<MqttMessage.StateUnsubscribed>(ReceivedStateUnsubscribed);
+            Receive<MqttMessage.RequestState>(ReceivedRequestState);
         }
 
         protected override void PreStart()
@@ -51,10 +57,11 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
             this.client = MqttClientProvider.For(this.mqttConfig);
             byte flag = this.client.Connect(this.mqttConfig.ClientId);
             log.Info("Connected to MQTT bus with flag {0}", flag);
-            this.client.ConnectionClosed += (sender, e) => this.manager.Tell(new MqttMessage.Log(LogLevel.InfoLevel, "Connection closed"));
-            this.client.MqttMsgSubscribed += (sender, e) => this.manager.Tell(new MqttMessage.Log(LogLevel.DebugLevel, "Subscribed"));
-            this.client.MqttMsgUnsubscribed += (sender, e) => this.manager.Tell(new MqttMessage.Log(LogLevel.DebugLevel, "Unsubscribe"));
+            Context.System.EventStream.Publish(new Bus.MqttConnectivityChangeEvent(true, false, DateTime.Now));
+            this.client.MqttMsgSubscribed += (sender, e) => self.Tell(new MqttMessage.StateSubscribed());
+            this.client.MqttMsgUnsubscribed += (sender, e) => self.Tell(new MqttMessage.StateUnsubscribed());
             this.client.MqttMsgPublishReceived += (sender, e) => self.Tell(new MqttMessage.Received(e.Message, e.Topic, e.QosLevel, e.DupFlag, e.Retain));
+            this.client.ConnectionClosed += (sender, e) => self.Tell(new MqttMessage.StateConnectionClosed());
             this.client.Subscribe(new string[] { this.topic }, new byte[] { MqttMsgBase.QOS_LEVEL_AT_MOST_ONCE });
         }
 
@@ -130,6 +137,32 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
                 this.processors[message.Operation] = new List<IActorRef>();
             }
             this.processors[message.Operation].Add(message.Processor);
+        }
+
+        private void ReceivedStateSubscribed(MqttMessage.StateSubscribed message)
+        {
+            this.isSubscribed = true;
+            Context.System.EventStream.Publish(new Bus.MqttConnectivityChangeEvent(this.client.IsConnected, this.isSubscribed, DateTime.Now));
+            this.manager.Tell(new MqttMessage.Log(LogLevel.DebugLevel, "Subscribed"));
+        }
+
+        private void ReceivedStateUnsubscribed(MqttMessage.StateUnsubscribed message)
+        {
+            this.isSubscribed = false;
+            Context.System.EventStream.Publish(new Bus.MqttConnectivityChangeEvent(this.client.IsConnected, this.isSubscribed, DateTime.Now));
+            this.manager.Tell(new MqttMessage.Log(LogLevel.DebugLevel, "Unsubscribed"));
+        }
+
+        private void ReceivedStateConnectionClosed(MqttMessage.StateConnectionClosed message)
+        {
+            this.isSubscribed = false;
+            Context.System.EventStream.Publish(new Bus.MqttConnectivityChangeEvent(false, this.isSubscribed, DateTime.Now));
+            this.manager.Tell(new MqttMessage.Log(LogLevel.InfoLevel, "Connection closed"));
+        }
+
+        private void ReceivedRequestState(MqttMessage.RequestState message)
+        {
+            Sender.Tell(new MqttMessage.CurrentState(this.client.IsConnected, this.isSubscribed, DateTime.Now));
         }
 
         private void PublishAloxiMessage(AloxiMessage aloxiMessage, string topic)

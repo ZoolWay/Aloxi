@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
@@ -13,16 +14,29 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
     public class ModelLoaderActor : LoxoneCommBaseActor
     {
         private readonly ILoggingAdapter log = Logging.GetLogger(Context);
+        private readonly IActorRef adapter;
 
-        public ModelLoaderActor(LoxoneConfig loxoneConfig) : base(loxoneConfig)
+        public ModelLoaderActor(LoxoneConfig loxoneConfig, IActorRef adapter) : base(loxoneConfig)
         {
+            this.adapter = adapter;
             ReceiveAsync<LoxoneMessage.LoadModel>(ReceivedLoadModel);
         }
 
         private async Task ReceivedLoadModel(LoxoneMessage.LoadModel message)
         {
             var http = GetLoxoneHttpClient();
-            var response = await http.GetAsync("data/LoxAPP3.json");
+            HttpResponseMessage response;
+            try
+            {
+                response = await http.GetAsync("data/LoxAPP3.json");
+                this.adapter.Tell(new LoxoneMessage.ReportAvailability(true, DateTime.Now));
+            }
+            catch (HttpRequestException ex)
+            {
+                log.Error(ex, "Failed to get data from miniserver");
+                this.adapter.Tell(new LoxoneMessage.ReportAvailability(false, DateTime.Now));
+                throw;
+            }
             log.Debug("Got response from miniserver, HTTP {0}", response.StatusCode);
             string body = await response.Content.ReadAsStringAsync();
             if (response.StatusCode != System.Net.HttpStatusCode.OK)
@@ -62,7 +76,7 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
                 }
             }
             Home newModel = new Home(controls.ToImmutableList());
-            Sender.Tell(new LoxoneMessage.UpdatedModel(newModel));
+            Sender.Tell(new LoxoneMessage.PublishModel(newModel, DateTime.Now));
         }
 
         private bool IsIgnored(LoxAppModel.ControlModel controlModel)
