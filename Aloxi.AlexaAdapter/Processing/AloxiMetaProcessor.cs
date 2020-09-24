@@ -16,14 +16,14 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
         {
             var config = Configuration.ProvideFor(lambdaContext);
 
-            switch (request.Header.Name)
+            switch (request.Directive.Header.Name)
             {
                 case "EchoRequest":
-                    return PerformEchoRequest(request.Payload, config, lambdaContext);
+                    return PerformEchoRequest(request.Directive.Payload, config, lambdaContext);
             }
 
-            Log.Error(lambdaContext, $"Request '{request.Header.Name}' is unkown");
-            return Task.FromResult(JObject.FromObject(new { Message = $"Failed, {request.Header.Name} is unknown" }));
+            Log.Error(lambdaContext, $"Request '{request.Directive.Header.Name}' is unkown");
+            return Task.FromResult(JObject.FromObject(new { Message = $"Failed, {request.Directive.Header.Name} is unknown" }));
         }
 
         private async Task<JObject> PerformEchoRequest(JObject payload, Configuration config, ILambdaContext lambdaContext)

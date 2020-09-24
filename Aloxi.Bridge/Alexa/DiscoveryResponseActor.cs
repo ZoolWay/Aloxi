@@ -47,9 +47,9 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
             }
             log.Debug("Dispatching cached AlexaDiscoveryReponse");
 
-            var response = new AlexaDiscoverResponse()
+            var responseEvent = new AlexaDiscoverResponseEvent()
             {
-                Header = new AlexaRequestHeader()
+                Header = new AlexaEventHeader()
                 {
                     Namespace = "Alexa.Discovery",
                     Name = "Discover.Response",
@@ -58,7 +58,10 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                 },
                 Payload = this.cache,
             };
-            ;
+            var response = new AlexaDiscoverResponse()
+            {
+                Event = responseEvent,
+            };
             this.mqttDispatcher.Tell(new Mqtt.MqttMessage.PublishAlexaResponse(JsonConvert.SerializeObject(response, this.jsonSettings)));
         }
 

@@ -57,3 +57,5 @@ TODO: Cover how to configure AWS IoT Core
   - send echo-request to lambda
   - send test-push
   - stop bridge (will require to log into raspberry to restart!)
+- Alexa
+  - make use of async features of payload version 3!

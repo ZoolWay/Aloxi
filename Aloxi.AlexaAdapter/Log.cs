@@ -37,6 +37,11 @@ namespace ZoolWay.Aloxi.AlexaAdapter
             TraceLog(LV_DEBUG, message);
         }
 
+        public static bool IsDebugEnabled()
+        {
+            return LevelMatches(LV_DEBUG, LV_INFO, LV_WARN, LV_ERROR);
+        }
+
         private static void LambdaLog(ILambdaContext context, string level, string message)
         {
             if ((level == "DEBUG") && (!LevelMatches("DEBUG", "INFO", "WARN", "ERROR"))) return;

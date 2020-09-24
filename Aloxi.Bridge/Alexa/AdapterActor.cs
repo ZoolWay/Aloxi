@@ -12,8 +12,8 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
 {
     public class AdapterActor : ReceiveActor
     {
-        private const string NS_DISCOVERY = "Alexa.ConnectedHome.Discovery";
-        private const string NS_CONTROL = "Alexa.ConnectedHome.Control";
+        private const string NS_DISCOVERY = "Alexa.Discovery";
+        private const string NS_POWERCONTROL = "Alexa.PowerController";
         private readonly ILoggingAdapter log = Logging.GetLogger(Context);
         private readonly JsonSerializerSettings jsonSettings;
         private readonly IActorRef mqttDispatcher;
@@ -24,7 +24,11 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
         {
             this.mqttDispatcher = mqttDispatcher;
             this.loxoneDispatcher = loxoneDispatcher;
-            this.jsonSettings = new JsonSerializerSettings() { ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver() };
+            this.jsonSettings = new JsonSerializerSettings()
+            {
+                ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver(),
+                NullValueHandling = NullValueHandling.Ignore,
+            };
             this.discoveryResponseHandler = ActorRefs.Nobody;
             Receive<MqttMessage.Process>(ReceivedProcess);
         }
@@ -47,40 +51,71 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                 return;
             }
             var request = JsonConvert.DeserializeObject<AlexaSmartHomeRequest>(message.Payload, this.jsonSettings);
-            if (request.Header.Namespace == NS_DISCOVERY)
+            if (request.Directive.Header.Namespace == NS_DISCOVERY)
             {
-                ProcessDiscovery(request.Header.Name, request.Payload);
+                ProcessDiscovery(request.Directive.Header.Name, request.Directive);
             }
-            if (request.Header.Namespace == NS_CONTROL)
+            if (request.Directive.Header.Namespace == NS_POWERCONTROL)
             {
-                ProcessControl(request.Header.Name, request.Payload);
+                ProcessPowerController(request.Directive.Header.Name, request.Directive);
             }
         }
 
-        private void ProcessControl(string name, JObject payload)
+        private void ProcessPowerController(string name, AlexaDirective directive)
         {
-            if (name == "TurnOnRequest")
+            string targetValue = "";
+            if (name == "TurnOn")
             {
-                var requestPayload = payload.ToObject<AlexaControlRequestPayload>();
-                this.loxoneDispatcher.Tell(new LoxoneMessage.ControlSwitch(requestPayload.Appliance.ApplianceId, LoxoneMessage.ControlSwitch.DesiredStateType.On));
+                this.loxoneDispatcher.Tell(new LoxoneMessage.ControlSwitch(directive.Endpoint.EndpointId, LoxoneMessage.ControlSwitch.DesiredStateType.On));
+                targetValue = "ON";
             }
-            else if (name == "TurnOffRequest")
+            else if (name == "TurnOff")
             {
-                var requestPayload = payload.ToObject<AlexaControlRequestPayload>();
-                this.loxoneDispatcher.Tell(new LoxoneMessage.ControlSwitch(requestPayload.Appliance.ApplianceId, LoxoneMessage.ControlSwitch.DesiredStateType.Off));
+                this.loxoneDispatcher.Tell(new LoxoneMessage.ControlSwitch(directive.Endpoint.EndpointId, LoxoneMessage.ControlSwitch.DesiredStateType.Off));
+                targetValue = "OFF";
             }
             else
             {
                 string message = $"Unknown control request '{name}'";
                 log.Error(message);
             }
-
-            this.mqttDispatcher.Tell(new MqttMessage.PublishAlexaResponse("{ \"msg\": \"no-resp\" }"));
+            var response = new AlexaResponse()
+            {
+                Event = new AlexaResponseEvent()
+                {
+                    Header = new AlexaEventHeader()
+                    {
+                        Namespace = "Alexa",
+                        Name = "Response",
+                        MessageId = Guid.NewGuid().ToString(),
+                        CorrelationId = directive.Header.CorrelationId,
+                        PayloadVersion = "3",
+                    },
+                    Endpoint = new AlexaEventEndpoint()
+                    {
+                        EndpointId = directive.Endpoint.EndpointId,
+                    },
+                },
+                Context = new AlexaContext()
+                {
+                    Properties = new System.Collections.Generic.List<AlexaProperty>()
+                    {
+                        new AlexaProperty()
+                        {
+                            Namespace = "Alexa.PowerController",
+                            Name = "powerState",
+                            Value = targetValue,
+                            TimeOfSample = DateTime.Now,
+                        }
+                    }
+                },
+            };
+            this.mqttDispatcher.Tell(new Mqtt.MqttMessage.PublishAlexaResponse(JsonConvert.SerializeObject(response, this.jsonSettings)));
         }
 
-        private void ProcessDiscovery(string name, JObject payload)
+        private void ProcessDiscovery(string name, AlexaDirective directive)
         {
-            if (name != "DiscoverAppliancesRequest")
+            if (name != "Discover")
             {
                 string message = $"Unknown discovery request '{name}'";
                 log.Error(message);

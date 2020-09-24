@@ -1,15 +1,20 @@
 {
-    "header": {
-        "messageId": "9484BF6A-854E-47B8-86CB-54B22F15740D",
-        "name": "TurnOnRequest",
-        "namespace": "Alexa.ConnectedHome.Control",
-        "payloadVersion": "2"
-    },
-    "payload": {
-        "accessToken": "1",
-        "appliance": {
-            "additionalApplianceDetails": {},
-            "applianceId": "0c3b36bd-6d72-11e2-b1e2bbc0505de965"
-        }
+    "directive": {
+        "header": {
+            "namespace": "Alexa.PowerController",
+            "name": "TurnOn",
+            "messageId": "fc9b9d21-4a74-4358-9cc6-44768966d31d",
+            "correlationToken": "6bef37fe-ae7d-448a-9a48-6f62998a325c",
+            "payloadVersion": "3"
+        },
+        "endpoint": {
+            "scope": {
+                "type": "BearerToken",
+                "token": "<an OAuth2 bearer token>"
+            },
+            "endpointId": "0c3b36bd-6d72-11e2-b1e2-bbc0505de965",
+            "cookie": {}
+        },
+        "payload": {}
     }
 }

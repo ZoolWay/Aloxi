@@ -23,30 +23,38 @@ namespace ZoolWay.Aloxi.AlexaAdapter
         public async Task<object> FunctionHandler(JObject request, ILambdaContext context)
         {
             if (request == null) throw new Exception("No request data given");
+            
+            if (Log.IsDebugEnabled())
+            {
+                Log.Debug(context, "Request: " + request.ToString());
+            }
 
             var alexaRequest = request.ToObject<AlexaSmartHomeRequest>();
-            if (alexaRequest.Header == null) throw new Exception("Invalid request, header missing");
-            Log.Debug(context, $"Checking request in namespace {alexaRequest.Header.Namespace}");
+            if (alexaRequest.Directive == null) throw new Exception("Invalid request, directive missing");
+            var h = alexaRequest.Directive.Header;
+            if (h == null) throw new Exception("Invalid request, header missing");
+            Log.Debug(context, $"Checking request in namespace {h.Namespace}, name {h.Name}, version {h.PayloadVersion}");
+            if (h.PayloadVersion != "3") throw new Exception($"Invalid payload version {h.PayloadVersion}, not supported!");
 
             AbstractProcessor processor = null;
-            switch (alexaRequest.Header.Namespace)
+            switch (h.Namespace)
             {
                 case "Aloxi.MetaControl":
                     processor = new AloxiMetaProcessor();
                     break;
 
-                case "Alexa.ConnectedHome.Discovery":
-                case "Alexa.ConnectedHome.Control":
+                case "Alexa.Discovery":
+                case "Alexa.PowerController":
                     processor = new AlexaPassthroughProcessor();
                     break;
 
-                case "Alexa.ConnectedHome.Query":
-                    processor = new AlexaCachedQueryProcessor();
-                    break;
+                //case "Alexa.ConnectedHome.Query":
+                //    processor = new AlexaCachedQueryProcessor();
+                //    break;
             }
-            if (processor == null) throw new Exception($"Namespace {alexaRequest.Header.Namespace} is not supported");
+            if (processor == null) throw new Exception($"Namespace {h.Namespace} is not supported");
 
-            Log.Info(context, $"Sending request '{alexaRequest.Header.Name}' to processor '{processor.Name}'");
+            Log.Info(context, $"Sending request '{h.Name}' to processor '{processor.Name}'");
             var response = await processor.ProcessRequest(alexaRequest, context);
             Log.Debug(context, "Returning response...");
 
