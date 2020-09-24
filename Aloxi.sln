@@ -8,6 +8,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Root", "Root", "{4D53B31A-E96D-42E3-B71E-7C4E7A2421C6}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
+		deploy-to-smartpi.sh = deploy-to-smartpi.sh
 		LICENSE = LICENSE
 		PRIVACY.md = PRIVACY.md
 		README.md = README.md
