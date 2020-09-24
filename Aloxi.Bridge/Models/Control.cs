@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.ComponentModel;
+using System.Text.Json.Serialization;
+
 using ZoolWay.Aloxi.Bridge.Loxone;
 
 namespace ZoolWay.Aloxi.Bridge.Models
@@ -8,6 +10,7 @@ namespace ZoolWay.Aloxi.Bridge.Models
     [ImmutableObject(true)]
     public class Control
     {
+        [JsonConverter(typeof(JsonStringEnumConverter))]
         public ControlType Type { get; }
         public string FriendlyName { get; }
         public LoxoneUuid LoxoneUuid { get; }
