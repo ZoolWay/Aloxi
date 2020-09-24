@@ -51,6 +51,7 @@ TODO: Cover how to configure AWS IoT Core
 - SONOS adapter
   - list devices/groups
   - make them available named for virtual output in loxone
+  - https://developer.sonos.com/build/connected-home-get-started/features/
 - REST commander
   - send echo-request to MQTT
   - send echo-request to lambda
