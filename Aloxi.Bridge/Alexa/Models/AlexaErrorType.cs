@@ -2,6 +2,9 @@
 
 namespace ZoolWay.Aloxi.Bridge.Alexa.Models
 {
+    /// <summary>
+    /// See https://developer.amazon.com/en-US/docs/alexa/device-apis/alexa-errorresponse.html.
+    /// </summary>
     public enum AlexaErrorType
     {
         ALREADY_IN_OPERATION,
