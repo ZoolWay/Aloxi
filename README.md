@@ -3,7 +3,7 @@ Alexa Loxone Smart Home Integration, 3rd edition.
 
 After a developer skills and two proxies I started to use the Alexa SmartHome SDK instead of the default Alexa Skill SDK. This way I will no longer have to say the name of my skill and the integration goes deeper and I can even use Amazon Smart Home rules.
 
-# AWS IoT Core
+## AWS IoT Core
 
 TODO: Cover how to configure AWS IoT Core
 
@@ -33,8 +33,44 @@ TODO: Cover how to configure AWS IoT Core
     ```
   - Under "security" of the object, attach a policy (those are not global IAM policies) and activate the cert if not alread active.
 
+## Alexa Smart Home Skill Setup
 
-# TODO
+### Start to create Smart Home skill
+
+tbd
+
+### Setup Login with Amazon (LWA)
+
+An Oauth-login is required for every smart home skill. For this "hard coded" sample we can just use the
+LWA service.
+
+* Create LWA-policy
+  * Go to <https://developer.amazon.com/dashboard>.
+  * Click _Login with Amazon_ (might link to <https://developer.amazon.com/loginwithamazon/console/site/lwa/overview.html>).
+  * Create a new security profile.
+  * Remember client-id and secret.
+* Process with skill setup _Account Linking_
+  * Setttings
+    * _Allow users to link their account to your skill from within your application or website_: NOT required
+    * _Allow users to authenticate using your mobile application_: really NOT required
+  * Grant type: _Auth Code Grant__
+  * Web Authorization URI: <https://www.amazon.com/ap/oa>
+  * Access Token URI: <https://api.amazon.com/auth/o2/token>
+  * Client ID: value from security profile
+  * Secret: value from security profile
+  * Authentication scheme: _HTTP Basic__
+  * Scope: Add one, named _profile_
+  * Note the redirect URLs for the following step
+* Add the redirect-URLs shown at the skills
+  * Got to your LWA security policy
+  * Select web settings
+  * Add all redirect URLs
+
+### Continue with skill
+
+tbd
+
+## TODO
 
 - REST Statuscontroller
   - Show home model
