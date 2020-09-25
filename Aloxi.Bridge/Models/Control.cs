@@ -16,14 +16,16 @@ namespace ZoolWay.Aloxi.Bridge.Models
         public LoxoneUuid LoxoneUuid { get; }
         public string LoxoneName { get; }
         public ImmutableDictionary<string, LoxoneUuid> Operations { get; }
+        public string RoomName { get; }
 
-        public Control(ControlType type, string friendlyName, LoxoneUuid loxoneUuid, string loxoneName, ImmutableDictionary<string, LoxoneUuid> operations)
+        public Control(ControlType type, string friendlyName, LoxoneUuid loxoneUuid, string loxoneName, ImmutableDictionary<string, LoxoneUuid> operations, string roomName)
         {
             this.Type = type;
             this.FriendlyName = friendlyName;
             this.LoxoneUuid = loxoneUuid;
             this.LoxoneName = loxoneName;
             this.Operations = operations;
+            this.RoomName = roomName;
         }
     }
 }

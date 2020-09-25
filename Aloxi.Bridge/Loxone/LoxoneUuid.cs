@@ -41,6 +41,21 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
             return new LoxoneUuid(guid, null);
         }
 
+        public override int GetHashCode()
+        {
+            return ToString().GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null) return false;
+            if (Object.ReferenceEquals(obj, this)) return true;
+            if (!(obj is LoxoneUuid)) return false;
+
+            LoxoneUuid other = obj as LoxoneUuid;
+            return (this.Guid.Equals(other.Guid) && String.Equals(this.SubPath, other.SubPath));
+        }
+
         private static (Guid guid, string subPath) ParseParts(string composedUuid)
         {
             if (composedUuid == null) return (Guid.Empty, null);

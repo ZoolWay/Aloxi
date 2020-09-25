@@ -107,7 +107,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                 {
                     EndpointId = uuid,
                     ManufacturerName = "Loxone",
-                    Description = "Lichtschalter via Loxone",
+                    Description = $"Lichtschalter via Loxone in {c.RoomName}",
                     FriendlyName = c.FriendlyName,
                     AdditionalAttributes = new Dictionary<string, string>()
                     {
@@ -126,7 +126,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                 {
                     EndpointId = uuid,
                     ManufacturerName = "Loxone",
-                    Description = "Dimmer via Loxone",
+                    Description = $"Dimmer via Loxone in {c.RoomName}",
                     FriendlyName = c.FriendlyName,
                     AdditionalAttributes = new Dictionary<string, string>()
                     {

@@ -54,7 +54,8 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
                 if (IsIgnored(cm.Key, cm.Value)) continue;
                 try
                 {
-                    controls.AddRange(ParseControl(cm.Key, cm.Value));
+                    string roomName = GetRoomName(cm.Value.Room, model.Rooms);
+                    controls.AddRange(ParseControl(cm.Key, cm.Value, roomName));
                 }
                 catch (Exception ex)
                 {
@@ -65,7 +66,16 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
             Sender.Tell(new LoxoneMessage.PublishModel(newModel, DateTime.Now));
         }
 
-        private IEnumerable<Control> ParseControl(LoxoneUuid key, LoxAppModel.ControlModel loxControl)
+        private string GetRoomName(LoxoneUuid room, Dictionary<LoxoneUuid, LoxAppModel.RoomModel> rooms)
+        {
+            if (rooms.ContainsKey(room))
+            {
+                return rooms[room].Name;
+            }
+            return "unbekannt";
+        }
+
+        private IEnumerable<Control> ParseControl(LoxoneUuid key, LoxAppModel.ControlModel loxControl, string roomName)
         {
             if (loxControl.Type == LoxAppModel.ControlTypeModel.Switch)
             {
@@ -74,17 +84,20 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
                     loxControl.Name,
                     key,
                     loxControl.Name,
-                    loxControl.States.ToImmutableDictionary<string, LoxoneUuid>()
+                    loxControl.States.ToImmutableDictionary<string, LoxoneUuid>(),
+                    roomName
                     );
                 return new[] { newControl };
             }
             else if (loxControl.Type == LoxAppModel.ControlTypeModel.Dimmer)
             {
+                // is dimmer?
                 Control newControl = new Control(ControlType.LightDimmableControl,
                     loxControl.Name,
                     key,
                     loxControl.Name,
-                    loxControl.States.ToImmutableDictionary<string, LoxoneUuid>()
+                    loxControl.States.ToImmutableDictionary<string, LoxoneUuid>(),
+                    roomName
                     );
                 return new[] { newControl };
             }
@@ -94,7 +107,7 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
                 List<Control> controls = new List<Control>();
                 foreach(var sc in loxControl.SubControls)
                 {
-                    controls.AddRange(ParseControl(sc.Key, sc.Value));
+                    controls.AddRange(ParseControl(sc.Key, sc.Value, roomName));
                 }
                 return controls;
             }
