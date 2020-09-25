@@ -38,10 +38,26 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
             public string LoxoneUuid { get; }
             public DesiredStateType DesiredState { get; }
 
-            public ControlSwitch(string loxoneUuid,  DesiredStateType desiredState)
+            public ControlSwitch(string loxoneUuid, DesiredStateType desiredState)
             {
                 this.LoxoneUuid = loxoneUuid;
                 this.DesiredState = desiredState;
+            }
+        }
+
+        public class ControlDimmer : LoxoneMessage
+        {
+            public enum DimType { Set, Adjust };
+
+            public string LoxoneUuid { get; }
+            public DimType Type { get; }
+            public int Value { get; }
+
+            public ControlDimmer(string loxoneUuid, DimType dimType, int value)
+            {
+                this.LoxoneUuid = loxoneUuid;
+                this.Type = dimType;
+                this.Value = value;
             }
         }
 

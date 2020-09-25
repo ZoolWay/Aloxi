@@ -14,6 +14,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
     {
         private const string NS_DISCOVERY = "Alexa.Discovery";
         private const string NS_POWERCONTROL = "Alexa.PowerController";
+        private const string NS_POWERLEVELCONTROL = "Alexa.PowerLevelController";
         private readonly ILoggingAdapter log = Logging.GetLogger(Context);
         private readonly JsonSerializerSettings jsonSettings;
         private readonly IActorRef mqttDispatcher;
@@ -55,9 +56,42 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
             {
                 ProcessDiscovery(request.Directive.Header.Name, request.Directive);
             }
-            if (request.Directive.Header.Namespace == NS_POWERCONTROL)
+            else if (request.Directive.Header.Namespace == NS_POWERCONTROL)
             {
                 ProcessPowerController(request.Directive.Header.Name, request.Directive);
+            }
+            else if (request.Directive.Header.Namespace == NS_POWERLEVELCONTROL)
+            {
+                ProcessPowerlevelController(request.Directive.Header.Name, request.Directive);
+            }
+            else
+            {
+                SendResponseToAlexa(CreateError(request.Directive.Endpoint.EndpointId, AlexaErrorType.INVALID_DIRECTIVE, $"Adapter does not support directive namespace {request.Directive.Header.Namespace}"));
+            }
+        }
+
+        private void ProcessPowerlevelController(string name, AlexaDirective directive)
+        {
+            if (name == "SetPowerLevel")
+            {
+                string targetPowerLevelProp = directive.Payload["powerLevel"].ToString();
+                bool valueParseable = Int32.TryParse(targetPowerLevelProp, out int targetPowerLevel);
+
+
+                this.loxoneDispatcher.Tell(new LoxoneMessage.ControlDimmer(directive.Endpoint.EndpointId, LoxoneMessage.ControlDimmer.DimType.Set, targetPowerLevel));
+
+                var response = CreateResponse(directive.Header.CorrelationId, directive.Endpoint.EndpointId);
+                response.Context.Properties.Add(new AlexaProperty("Alexa.PowerLevelController", "powerLevel", targetPowerLevelProp, DateTime.Now));
+                SendResponseToAlexa(response);
+            }
+            else if (name == "AdjustPowerLevel")
+            {
+                // TODO
+                SendResponseToAlexa(CreateError(directive.Endpoint.EndpointId, AlexaErrorType.INVALID_DIRECTIVE, "Adapter does not support adjusting power level"));
+            }
+            else
+            {
+                SendResponseToAlexa(CreateError(directive.Endpoint.EndpointId, AlexaErrorType.INVALID_DIRECTIVE, $"PowerLevelAdapter does not support '{name}'"));
             }
         }
 
@@ -79,7 +113,40 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                 string message = $"Unknown control request '{name}'";
                 log.Error(message);
             }
-            var response = new AlexaResponse()
+            var response = CreateResponse(directive.Header.CorrelationId, directive.Endpoint.EndpointId);
+            response.Context.Properties.Add(new AlexaProperty("Alexa.PowerController", "powerState", targetValue, DateTime.Now));
+            SendResponseToAlexa(response);
+        }
+
+        private AlexaError CreateError(string endpointId, AlexaErrorType errorType, string internalMessage)
+        {
+            return new AlexaError()
+            {
+                Event = new AlexaErrorEvent()
+                {
+                    Header = new AlexaEventHeader()
+                    {
+                        Namespace = "Alexa",
+                        Name = "ErrorResponse",
+                        MessageId = Guid.NewGuid().ToString(),
+                        PayloadVersion = "3",
+                    },
+                    Endpoint = new AlexaEventEndpoint()
+                    {
+                        EndpointId = endpointId
+                    },
+                    Payload = new AlexaErrorPayload()
+                    {
+                        Type = errorType,
+                        Message = internalMessage,
+                    },
+                }
+            };
+        }
+
+        private AlexaResponse CreateResponse(string correlationId, string endpointId)
+        {
+            return new AlexaResponse()
             {
                 Event = new AlexaResponseEvent()
                 {
@@ -88,28 +155,23 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                         Namespace = "Alexa",
                         Name = "Response",
                         MessageId = Guid.NewGuid().ToString(),
-                        CorrelationId = directive.Header.CorrelationId,
+                        CorrelationId = correlationId,
                         PayloadVersion = "3",
                     },
                     Endpoint = new AlexaEventEndpoint()
                     {
-                        EndpointId = directive.Endpoint.EndpointId,
+                        EndpointId = endpointId,
                     },
                 },
                 Context = new AlexaContext()
                 {
-                    Properties = new System.Collections.Generic.List<AlexaProperty>()
-                    {
-                        new AlexaProperty()
-                        {
-                            Namespace = "Alexa.PowerController",
-                            Name = "powerState",
-                            Value = targetValue,
-                            TimeOfSample = DateTime.Now,
-                        }
-                    }
+                    Properties = new System.Collections.Generic.List<AlexaProperty>(),
                 },
             };
+        }
+
+        private void SendResponseToAlexa(object response)
+        {
             this.mqttDispatcher.Tell(new Mqtt.MqttMessage.PublishAlexaResponse(JsonConvert.SerializeObject(response, this.jsonSettings)));
         }
 
