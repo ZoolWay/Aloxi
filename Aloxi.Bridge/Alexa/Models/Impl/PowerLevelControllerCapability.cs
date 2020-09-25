@@ -1,24 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ZoolWay.Aloxi.Bridge.Alexa.Models.Impl
 {
-    /// <summary>
-    /// Capability for a device which can be turned on and off (e.g. light switch).
-    /// </summary>
-    internal class PowerControllerCapability : AlexaEndpointCapability
+    internal class PowerLevelControllerCapability : AlexaEndpointCapability
     {
-        public override string Interface { get => "Alexa.PowerController"; }
+        public override string Interface { get => "Alexa.PowerLevelController"; }
 
-        public PowerControllerCapability()
+        public PowerLevelControllerCapability()
         {
             this.Properties = new AlexaEndpointCapabilityProperties()
             {
-                Supported = new[] 
+                Supported = new[]
                 {
                     new Dictionary<string, string>()
                     {
-                        { "name", "powerState" }
+                        { "name", "powerLevel" }
                     },
                 },
                 ProactivelyReported = false,

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Akka.Actor;
@@ -50,25 +51,10 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
             List<Control> controls = new List<Control>();
             foreach (var cm in model.Controls)
             {
-                if (IsIgnored(cm.Value)) continue;
-
+                if (IsIgnored(cm.Key, cm.Value)) continue;
                 try
                 {
-                    // is normal light switch?
-                    if (cm.Value.Type == LoxAppModel.ControlTypeModel.Switch)
-                    {
-                        Control newControl = new Control(ControlType.LightControl,
-                            cm.Value.Name,
-                            cm.Key,
-                            cm.Value.Name,
-                            cm.Value.States.ToImmutableDictionary<string, LoxoneUuid>()
-                            );
-                        controls.Add(newControl);
-                    }
-                    else
-                    {
-                        log.Debug("Ignoring model control {0}: {1} ({2})", cm.Key, cm.Value.Name, cm.Value.Type);
-                    }
+                    controls.AddRange(ParseControl(cm.Key, cm.Value));
                 }
                 catch (Exception ex)
                 {
@@ -79,8 +65,46 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
             Sender.Tell(new LoxoneMessage.PublishModel(newModel, DateTime.Now));
         }
 
-        private bool IsIgnored(LoxAppModel.ControlModel controlModel)
+        private IEnumerable<Control> ParseControl(LoxoneUuid key, LoxAppModel.ControlModel loxControl)
         {
+            if (loxControl.Type == LoxAppModel.ControlTypeModel.Switch)
+            {
+                // is normal light switch?
+                Control newControl = new Control(ControlType.LightControl,
+                    loxControl.Name,
+                    key,
+                    loxControl.Name,
+                    loxControl.States.ToImmutableDictionary<string, LoxoneUuid>()
+                    );
+                return new[] { newControl };
+            }
+            else if (loxControl.Type == LoxAppModel.ControlTypeModel.Dimmer)
+            {
+                Control newControl = new Control(ControlType.LightDimmableControl,
+                    loxControl.Name,
+                    key,
+                    loxControl.Name,
+                    loxControl.States.ToImmutableDictionary<string, LoxoneUuid>()
+                    );
+                return new[] { newControl };
+            }
+            else if (loxControl.Type == LoxAppModel.ControlTypeModel.LightController)
+            {
+                // defer to subcontrols which should be switches and dimmers
+                List<Control> controls = new List<Control>();
+                foreach(var sc in loxControl.SubControls)
+                {
+                    controls.AddRange(ParseControl(sc.Key, sc.Value));
+                }
+                return controls;
+            }
+            log.Debug("Ignoring model control {0}: {1}, not supported type '{2}'", key, loxControl.Name, loxControl.Type);
+            return Enumerable.Empty<Control>();
+        }
+
+        private bool IsIgnored(LoxoneUuid uuid, LoxAppModel.ControlModel controlModel)
+        {
+            if (this.loxoneConfig.IgnoreControls.Contains(uuid.ToString())) return true;
             if (this.loxoneConfig.IgnoreCategories.Contains(controlModel.Cat.ToString())) return true;
             return false;
         }

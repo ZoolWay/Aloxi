@@ -11,13 +11,15 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
         public string Username { get; }
         public string Password { get; }
         public ImmutableArray<string> IgnoreCategories { get; }
+        public ImmutableArray<string> IgnoreControls { get; }
 
-        public LoxoneConfig(string miniserver, string username, string password, ImmutableArray<string> ignoreCategories)
+        public LoxoneConfig(string miniserver, string username, string password, ImmutableArray<string> ignoreCategories, ImmutableArray<string> ignoreControls)
         {
             this.Miniserver = miniserver;
             this.Username = username;
             this.Password = password;
             this.IgnoreCategories = ignoreCategories;
+            this.IgnoreControls = ignoreControls;
         }
     }
 }

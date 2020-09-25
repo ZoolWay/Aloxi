@@ -94,7 +94,8 @@ namespace ZoolWay.Aloxi.Bridge
             {
                 var c = configuration.GetSection("Loxone");
                 ImmutableArray<string> ignoreCats = c.GetSection("IgnoreCategories").GetChildren().ToList().Select(x => x.Value).ToImmutableArray();
-                var loxoneConfig = new Loxone.LoxoneConfig(c["Miniserver"], c["Username"], c["Password"], ignoreCats);
+                ImmutableArray<string> ignoreControls = c.GetSection("IgnoreControls").GetChildren().ToList().Select(x => x.Value).ToImmutableArray();
+                var loxoneConfig = new Loxone.LoxoneConfig(c["Miniserver"], c["Username"], c["Password"], ignoreCats, ignoreControls);
                 this.loxoneAdapter = this.actorSystem.ActorOf(Props.Create(() => new Loxone.AdapterActor(loxoneConfig)), "loxone");
             }
             catch (Exception ex)

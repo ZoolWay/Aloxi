@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Akka.Actor;
@@ -7,6 +8,7 @@ using Akka.Event;
 using Newtonsoft.Json;
 using ZoolWay.Aloxi.Bridge.Alexa.Models;
 using ZoolWay.Aloxi.Bridge.Alexa.Models.Impl;
+using ZoolWay.Aloxi.Bridge.Loxone;
 using ZoolWay.Aloxi.Bridge.Models;
 
 namespace ZoolWay.Aloxi.Bridge.Alexa
@@ -80,27 +82,9 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                 List<AlexaEndpoint> endpoints = new List<AlexaEndpoint>();
                 foreach (var c in this.homeModel.Controls)
                 {
-                    if (c.Type == ControlType.LightControl)
+                    AlexaEndpoint ep = ParseControlToEndpoint(c);
+                    if (ep != null)
                     {
-                        string uuid = c.LoxoneUuid.ToString();
-                        AlexaEndpoint ep = new AlexaEndpoint()
-                        {
-                            EndpointId = uuid,
-                            ManufacturerName = "Loxone",
-                            Description = "Lichtcontrol von Loxone",
-                            FriendlyName = c.FriendlyName,
-                            AdditionalAttributes = new Dictionary<string, string>()
-                            {
-                                { "LoxoneName", c.LoxoneName },
-                                { "LoxoneUuid", uuid },
-                            },
-                            DisplayCategories = new[] { "LIGHT" },
-                            Capabilities = new AlexaEndpointCapability[] { new PowerControllerCapability() },
-                        };
-                        foreach (var kvp in c.Operations)
-                        {
-                            ep.AdditionalAttributes.Add($"LoxoneOperation:{kvp.Key}", kvp.Value.ToString());
-                        }
                         endpoints.Add(ep);
                     }
                 }
@@ -111,6 +95,58 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
             {
                 string errMsg = $"Failed to build discovery response: {ex.Message}";
                 log.Error(ex, errMsg);
+            }
+        }
+
+        private AlexaEndpoint ParseControlToEndpoint(Control c)
+        {
+            string uuid = c.LoxoneUuid.ToString();
+            if (c.Type == ControlType.LightControl)
+            {
+                AlexaEndpoint ep = new AlexaEndpoint()
+                {
+                    EndpointId = uuid,
+                    ManufacturerName = "Loxone",
+                    Description = "Lichtschalter via Loxone",
+                    FriendlyName = c.FriendlyName,
+                    AdditionalAttributes = new Dictionary<string, string>()
+                    {
+                        { "LoxoneName", c.LoxoneName },
+                        { "LoxoneUuid", uuid },
+                    },
+                    DisplayCategories = new[] { "LIGHT" },
+                    Capabilities = new AlexaEndpointCapability[] { new PowerControllerCapability() },
+                };
+                AddOperationsToAdditionalAttributes(c.Operations, ep.AdditionalAttributes);
+                return ep;
+            }
+            else if (c.Type == ControlType.LightDimmableControl)
+            {
+                AlexaEndpoint ep = new AlexaEndpoint()
+                {
+                    EndpointId = uuid,
+                    ManufacturerName = "Loxone",
+                    Description = "Dimmer via Loxone",
+                    FriendlyName = c.FriendlyName,
+                    AdditionalAttributes = new Dictionary<string, string>()
+                    {
+                        { "LoxoneName", c.LoxoneName },
+                        { "LoxoneUuid", uuid },
+                    },
+                    DisplayCategories = new[] { "LIGHT" },
+                    Capabilities = new AlexaEndpointCapability[] { new PowerLevelControllerCapability() },
+                };
+                AddOperationsToAdditionalAttributes(c.Operations, ep.AdditionalAttributes);
+                return ep;
+            }
+            return null;
+        }
+
+        private void AddOperationsToAdditionalAttributes(ImmutableDictionary<string, LoxoneUuid> operations, Dictionary<string, string> targetAttributes)
+        {
+            foreach (var kvp in operations)
+            {
+                targetAttributes.Add($"LoxoneOperation:{kvp.Key}", kvp.Value.ToString());
             }
         }
     }
