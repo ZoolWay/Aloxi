@@ -109,11 +109,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                     ManufacturerName = "Loxone",
                     Description = $"Lichtschalter via Loxone in {c.RoomName}",
                     FriendlyName = c.FriendlyName,
-                    AdditionalAttributes = new Dictionary<string, string>()
-                    {
-                        { "LoxoneName", c.LoxoneName },
-                        { "LoxoneUuid", uuid },
-                    },
+                    AdditionalAttributes = GenerateBasicAdditionalAttributes(c),
                     DisplayCategories = new[] { "LIGHT" },
                     Capabilities = new AlexaEndpointCapability[] { new PowerControllerCapability() },
                 };
@@ -128,18 +124,37 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                     ManufacturerName = "Loxone",
                     Description = $"Dimmer via Loxone in {c.RoomName}",
                     FriendlyName = c.FriendlyName,
-                    AdditionalAttributes = new Dictionary<string, string>()
-                    {
-                        { "LoxoneName", c.LoxoneName },
-                        { "LoxoneUuid", uuid },
-                    },
+                    AdditionalAttributes = GenerateBasicAdditionalAttributes(c),
                     DisplayCategories = new[] { "LIGHT" },
                     Capabilities = new AlexaEndpointCapability[] { new PowerLevelControllerCapability() },
                 };
                 AddOperationsToAdditionalAttributes(c.Operations, ep.AdditionalAttributes);
                 return ep;
             }
+            else if (c.Type == ControlType.BlindControl)
+            {
+                AlexaEndpoint ep = new AlexaEndpoint()
+                {
+                    EndpointId = uuid,
+                    ManufacturerName = "Loxone",
+                    Description = $"Jalousie via Loxone in {c.RoomName}",
+                    FriendlyName = c.FriendlyName,
+                    AdditionalAttributes = GenerateBasicAdditionalAttributes(c),
+                    DisplayCategories = new[] { "INTERIOR_BLIND" },
+                    Capabilities = new AlexaEndpointCapability[] { new ModeControllerCapabilityForBlinds(), new AlexaCapability() },
+                };
+                AddOperationsToAdditionalAttributes(c.Operations, ep.AdditionalAttributes);
+                return ep;
+            }
             return null;
+        }
+
+        private Dictionary<string, string> GenerateBasicAdditionalAttributes(Control c)
+        {
+            var attr = new Dictionary<string, string>();
+            attr["LoxoneName"] = c.LoxoneName;
+            attr["LoxoneUuid"] = c.LoxoneUuid.ToString();
+            return attr;
         }
 
         private void AddOperationsToAdditionalAttributes(ImmutableDictionary<string, LoxoneUuid> operations, Dictionary<string, string> targetAttributes)

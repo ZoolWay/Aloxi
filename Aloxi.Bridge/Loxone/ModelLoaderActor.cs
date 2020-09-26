@@ -101,6 +101,19 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
                     );
                 return new[] { newControl };
             }
+            else if (loxControl.Type == LoxAppModel.ControlTypeModel.Jalousie)
+            {
+                // is blinds?
+                Control newControl = new Control(ControlType.BlindControl,
+                    loxControl.Name,
+                    key,
+                    loxControl.Name,
+                    loxControl.States.ToImmutableDictionary<string, LoxoneUuid>(),
+                    roomName
+                    );
+                return new[] { newControl };
+
+            }
             else if (loxControl.Type == LoxAppModel.ControlTypeModel.LightController)
             {
                 // defer to subcontrols which should be switches and dimmers

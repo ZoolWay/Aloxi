@@ -61,6 +61,20 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
             }
         }
 
+        public class ControlBlinds : LoxoneMessage
+        {
+            public enum BlindCmd { FullUp, FullDown, Stop };
+
+            public string LoxoneUuid { get; }
+            public BlindCmd Command { get; }
+
+            public ControlBlinds(string loxoneUuid, BlindCmd command)
+            {
+                this.LoxoneUuid = loxoneUuid;
+                this.Command = command;
+            }
+        }
+
         public class TestAvailability : LoxoneMessage
         {
         }

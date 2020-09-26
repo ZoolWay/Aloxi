@@ -18,6 +18,7 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
             this.adapter = adapter;
             ReceiveAsync<LoxoneMessage.ControlSwitch>(ReceivedControlSwitch);
             ReceiveAsync<LoxoneMessage.ControlDimmer>(ReceivedControlDimmer);
+            ReceiveAsync<LoxoneMessage.ControlBlinds>(ReceivedControlBlinds);
             ReceiveAsync<LoxoneMessage.TestAvailability>(ReceivedTestAvailability);
         }
 
@@ -44,6 +45,13 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
             var response = await RunLoxoneAsync($"dev/sps/io/{HttpUtility.UrlEncode(message.LoxoneUuid)}/{loxOp}");
         }
 
+        private async Task ReceivedControlBlinds(LoxoneMessage.ControlBlinds message)
+        {
+            log.Debug($"Blinds '{message.LoxoneUuid}' set to '{message.Command}'");
+            string loxOp = TranslateToLoxoneOperation(message.Command);
+            var response = await RunLoxoneAsync($"dev/sps/io/{HttpUtility.UrlEncode(message.LoxoneUuid)}/{loxOp}");
+        }
+
         private async Task<HttpResponseMessage> RunLoxoneAsync(string requestUri)
         {
             HttpResponseMessage response = null;
@@ -64,6 +72,20 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
                 this.adapter.Tell(new LoxoneMessage.ReportAvailability(false, DateTime.Now));
             }
             return response;
+        }
+
+        private string TranslateToLoxoneOperation(LoxoneMessage.ControlBlinds.BlindCmd command)
+        {
+            switch (command)
+            {
+                case LoxoneMessage.ControlBlinds.BlindCmd.FullDown:
+                    return "fulldown";
+                case LoxoneMessage.ControlBlinds.BlindCmd.FullUp:
+                    return "fullup";
+                case LoxoneMessage.ControlBlinds.BlindCmd.Stop:
+                    return "stop";
+            }
+            return String.Empty;
         }
 
         private string TranslateToLoxoneOperation(LoxoneMessage.ControlSwitch.DesiredStateType desiredState, string uuid)

@@ -27,6 +27,7 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
 
             Receive<LoxoneMessage.ControlSwitch>(m => this.sender.Forward(m));
             Receive<LoxoneMessage.ControlDimmer>(m => this.sender.Forward(m));
+            Receive<LoxoneMessage.ControlBlinds>(m => this.sender.Forward(m));
             Receive<LoxoneMessage.PublishModel>(ReceivedUpdatedModel);
             Receive<LoxoneMessage.ReportAvailability>(ReceivedReportAvailability);
             Receive<LoxoneMessage.InitAdapter>(ReceivedInitAdapter);

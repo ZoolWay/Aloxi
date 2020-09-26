@@ -15,6 +15,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
         private const string NS_DISCOVERY = "Alexa.Discovery";
         private const string NS_POWERCONTROL = "Alexa.PowerController";
         private const string NS_POWERLEVELCONTROL = "Alexa.PowerLevelController";
+        private const string NS_MODECONTROL = "Alexa.ModeController";
         private readonly ILoggingAdapter log = Logging.GetLogger(Context);
         private readonly JsonSerializerSettings jsonSettings;
         private readonly IActorRef mqttDispatcher;
@@ -64,10 +65,48 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
             {
                 ProcessPowerlevelController(request.Directive.Header.Name, request.Directive);
             }
+            else if (request.Directive.Header.Namespace == NS_MODECONTROL)
+            {
+                ProcessModeController(request.Directive);
+            }
             else
             {
                 SendResponseToAlexa(CreateError(request.Directive.Endpoint.EndpointId, AlexaErrorType.INVALID_DIRECTIVE, $"Adapter does not support directive namespace {request.Directive.Header.Namespace}"));
             }
+        }
+
+        private void ProcessModeController(AlexaDirective directive)
+        {
+            string name = directive.Header.Name;
+            string instance = directive.Header.Instance;
+
+            if (instance == "Blinds.BlindTargetState")
+            {
+                if (name == "SetMode")
+                {
+                    string targetMode = directive.Payload["mode"].ToString();
+                    LoxoneMessage.ControlBlinds.BlindCmd command = LoxoneMessage.ControlBlinds.BlindCmd.FullUp;
+                    switch (targetMode)
+                    {
+                        case "BlindTargetState.FullUp":
+                            command = LoxoneMessage.ControlBlinds.BlindCmd.FullUp;
+                            break;
+                        case "BlindTargetState.FullDown":
+                            command = LoxoneMessage.ControlBlinds.BlindCmd.FullDown;
+                            break;
+                        case "BlindTargetState.Stop":
+                            command = LoxoneMessage.ControlBlinds.BlindCmd.Stop;
+                            break;
+                    }
+                    this.loxoneDispatcher.Tell(new LoxoneMessage.ControlBlinds(directive.Endpoint.EndpointId, command));
+                    var response = CreateResponse(directive.Header.CorrelationId, directive.Endpoint.EndpointId);
+                    response.Context.Properties.Add(new AlexaProperty("Alexa.ModeController", "mode", targetMode, DateTime.Now));
+                    SendResponseToAlexa(response);
+                    return;
+                }
+            }
+
+            SendResponseToAlexa(CreateError(directive.Endpoint.EndpointId, AlexaErrorType.INVALID_DIRECTIVE, $"Directive {name} for instance {instance} is not implemented!"));
         }
 
         private void ProcessPowerlevelController(string name, AlexaDirective directive)
