@@ -50,18 +50,18 @@ namespace ZoolWay.Aloxi.AlexaAdapter
             if ((level == "ERROR") && (!LevelMatches("ERROR"))) return;
             if (String.IsNullOrWhiteSpace(context?.AwsRequestId))
             {
-                LambdaLogger.Log($"{level.ToUpper()}  {message}\n");
+                LambdaLogger.Log($"{level.ToUpper(),5}  {message}\n");
             }
             else
             {
-                LambdaLogger.Log($"{level.ToUpper()} RequestId: {context.AwsRequestId}  {message}\n");
+                LambdaLogger.Log($"{level.ToUpper(),5} RequestId: {context.AwsRequestId}  {message}\n");
             }
         }
 
         [Conditional("TRACE")]
         private static void TraceLog(string level, string message)
         {
-            Trace.WriteLine($"[{DateTime.Now.TimeOfDay.TotalSeconds:F1}][{level.ToUpper()}] {message}");
+            Trace.WriteLine($"[{DateTime.Now.TimeOfDay.TotalSeconds:F1}][{level.ToUpper(),5}] {message}");
         }
 
         private static string InitConfiguredLogLevel()
