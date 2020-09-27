@@ -3,7 +3,12 @@ obj/
 bin/
 *.csproj.user
 appsettings.Development.json
-/certs
+
+# Local cert directoy
+/certs/*.pfx
+/certs/*.key
+/certs/*.pem
+/certs/*.pem.crt
 
 # Logs
 logs

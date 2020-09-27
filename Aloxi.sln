@@ -26,6 +26,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "certs", "certs", "{319FDFE3-C6B8-4BBB-A056-E2A2572A8DEE}"
+	ProjectSection(SolutionItems) = preProject
+		certs\gen_pfx_from_key_and_cert.sh = certs\gen_pfx_from_key_and_cert.sh
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -46,6 +51,7 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{EDF6C151-9EF2-462A-9D3A-A8E621AF8AF7} = {4D53B31A-E96D-42E3-B71E-7C4E7A2421C6}
+		{319FDFE3-C6B8-4BBB-A056-E2A2572A8DEE} = {4D53B31A-E96D-42E3-B71E-7C4E7A2421C6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F60C499B-4E9E-4CBD-B457-D79F2F66631B}
