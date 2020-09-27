@@ -106,7 +106,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                 AlexaEndpoint ep = new AlexaEndpoint()
                 {
                     EndpointId = uuid,
-                    ManufacturerName = "Loxone",
+                    ManufacturerName = "Loxone / Aloxi by ZoolWay",
                     Description = $"Lichtschalter via Loxone in {c.RoomName}",
                     FriendlyName = c.FriendlyName,
                     AdditionalAttributes = GenerateBasicAdditionalAttributes(c),
@@ -121,7 +121,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                 AlexaEndpoint ep = new AlexaEndpoint()
                 {
                     EndpointId = uuid,
-                    ManufacturerName = "Loxone",
+                    ManufacturerName = "Loxone / Aloxi by ZoolWay",
                     Description = $"Dimmer via Loxone in {c.RoomName}",
                     FriendlyName = c.FriendlyName,
                     AdditionalAttributes = GenerateBasicAdditionalAttributes(c),
@@ -136,7 +136,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                 AlexaEndpoint ep = new AlexaEndpoint()
                 {
                     EndpointId = uuid,
-                    ManufacturerName = "Loxone",
+                    ManufacturerName = "Loxone / Aloxi by ZoolWay",
                     Description = $"Jalousie via Loxone in {c.RoomName}",
                     FriendlyName = c.FriendlyName,
                     AdditionalAttributes = GenerateBasicAdditionalAttributes(c),
