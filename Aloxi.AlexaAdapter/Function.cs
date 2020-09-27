@@ -56,7 +56,11 @@ namespace ZoolWay.Aloxi.AlexaAdapter
 
             Log.Info(context, $"Sending request '{h.Name}' to processor '{processor.Name}'");
             var response = await processor.ProcessRequest(alexaRequest, context);
-            Log.Debug(context, "Returning response...");
+            if (Log.IsDebugEnabled())
+            {
+                string respText = response?.ToString() ?? "<null>";
+                Log.Debug(context, "Response: " + respText);
+            }
 
             return response;
         }

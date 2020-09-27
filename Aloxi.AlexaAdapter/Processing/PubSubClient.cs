@@ -61,7 +61,7 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
                 {
                     if (publishTask.Result == null)
                     {
-                        Log.Warn(this.lambdaContext, $"PSC/RBP: Passing NULL throught (we did not get a response?)");
+                        Log.Warn(this.lambdaContext, $"PSC/RBP: Passing NULL through (we did not get a response?)");
                         return null;
                     }
                     Log.Debug(this.lambdaContext, $"PSC/RBP: Continueing with {publishTask?.Result?.Data?.Count} datanodes");
