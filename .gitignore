@@ -1,14 +1,17 @@
 .vs
 obj/
 bin/
-*.csproj.user
-appsettings.Development.json
 
 # Local cert directoy
 /certs/*.pfx
 /certs/*.key
 /certs/*.pem
 /certs/*.pem.crt
+
+# developer specific files
+*.csproj.user
+appsettings.Development.json
+launchSettings.json
 
 # Logs
 logs
