@@ -203,7 +203,7 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
                 caPath = Path.Join(basePath, caPath);
                 certPath = Path.Join(basePath, certPath);
             }
-            Log.Debug(context, $"PSC/CCBOC: Creating MQTT client with certificate from {Path.GetDirectoryName(certPath)}");
+            Log.Debug(context, $"PSC/CCBOC: Creating MQTT client with certificate {Path.GetFileName(certPath)} from {Path.GetDirectoryName(certPath)}");
             X509Certificate caCert = X509Certificate.CreateFromCertFile(caPath);
             X509Certificate2 clientCert = new X509Certificate2(certPath, (String)null, X509KeyStorageFlags.Exportable);
             return new MqttClient(endpoint, BROKER_PORT, true, caCert, clientCert, MqttSslProtocols.TLSv1_2);
