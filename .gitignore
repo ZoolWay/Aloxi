@@ -12,6 +12,7 @@ bin/
 *.csproj.user
 appsettings.Development.json
 launchSettings.json
+aws-lambda-tools-defaults.json
 
 # Logs
 logs
