@@ -139,12 +139,12 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
             string targetValue = "";
             if (name == "TurnOn")
             {
-                this.loxoneDispatcher.Tell(new LoxoneMessage.ControlSwitch(directive.Endpoint.EndpointId, LoxoneMessage.ControlSwitch.DesiredStateType.On));
+                this.loxoneDispatcher.Tell(new LoxoneMessage.ControlSwitch(AlexaUuidTranslator.ToLoxoneUuid(directive.Endpoint.EndpointId), LoxoneMessage.ControlSwitch.DesiredStateType.On));
                 targetValue = "ON";
             }
             else if (name == "TurnOff")
             {
-                this.loxoneDispatcher.Tell(new LoxoneMessage.ControlSwitch(directive.Endpoint.EndpointId, LoxoneMessage.ControlSwitch.DesiredStateType.Off));
+                this.loxoneDispatcher.Tell(new LoxoneMessage.ControlSwitch(AlexaUuidTranslator.ToLoxoneUuid(directive.Endpoint.EndpointId), LoxoneMessage.ControlSwitch.DesiredStateType.Off));
                 targetValue = "OFF";
             }
             else

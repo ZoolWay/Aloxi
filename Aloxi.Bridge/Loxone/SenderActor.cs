@@ -42,14 +42,14 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
         {
             log.Debug($"Switch '{message.LoxoneUuid}' to '{message.DesiredState}'");
             string loxOp = TranslateToLoxoneOperation(message.DesiredState, message.LoxoneUuid);
-            var response = await RunLoxoneAsync($"dev/sps/io/{HttpUtility.UrlEncode(message.LoxoneUuid)}/{loxOp}");
+            var response = await RunLoxoneAsync($"dev/sps/io/{HttpUtility.UrlEncode(message.LoxoneUuid.ToString())}/{loxOp}");
         }
 
         private async Task ReceivedControlBlinds(LoxoneMessage.ControlBlinds message)
         {
             log.Debug($"Blinds '{message.LoxoneUuid}' set to '{message.Command}'");
             string loxOp = TranslateToLoxoneOperation(message.Command);
-            var response = await RunLoxoneAsync($"dev/sps/io/{HttpUtility.UrlEncode(message.LoxoneUuid)}/{loxOp}");
+            var response = await RunLoxoneAsync($"dev/sps/io/{HttpUtility.UrlEncode(message.LoxoneUuid.ToString())}/{loxOp}");
         }
 
         private async Task<HttpResponseMessage> RunLoxoneAsync(string requestUri)
@@ -88,7 +88,7 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
             return String.Empty;
         }
 
-        private string TranslateToLoxoneOperation(LoxoneMessage.ControlSwitch.DesiredStateType desiredState, string uuid)
+        private string TranslateToLoxoneOperation(LoxoneMessage.ControlSwitch.DesiredStateType desiredState, LoxoneUuid uuid)
         {
             switch (desiredState)
             {
@@ -97,7 +97,7 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
                 case LoxoneMessage.ControlSwitch.DesiredStateType.Off:
                     return "Off";
                 case LoxoneMessage.ControlSwitch.DesiredStateType.ByUuid:
-                    return uuid;
+                    return uuid.ToString();
             }
             string errMsg = $"DesiredStatte '{desiredState}' could not be translated";
             throw new Exception(errMsg);

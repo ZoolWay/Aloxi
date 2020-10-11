@@ -35,10 +35,10 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
         {
             public enum DesiredStateType { On, Off, ByUuid };
 
-            public string LoxoneUuid { get; }
+            public LoxoneUuid LoxoneUuid { get; }
             public DesiredStateType DesiredState { get; }
 
-            public ControlSwitch(string loxoneUuid, DesiredStateType desiredState)
+            public ControlSwitch(LoxoneUuid loxoneUuid, DesiredStateType desiredState)
             {
                 this.LoxoneUuid = loxoneUuid;
                 this.DesiredState = desiredState;
