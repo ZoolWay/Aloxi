@@ -23,7 +23,11 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
 
         public DiscoveryResponseActor(IActorRef mqttDispatcher)
         {
-            this.jsonSettings = new JsonSerializerSettings() { ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver() };
+            this.jsonSettings = new JsonSerializerSettings() 
+            { 
+                ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver(),
+                NullValueHandling = NullValueHandling.Ignore,
+            };
             this.mqttDispatcher = mqttDispatcher;
             Receive<AlexaMessage.PublishDiscoveryResponse>(ReceivedPublishDiscoveryResponse);
             Receive<Bus.HomeModelUpdatedEvent>(ReceivedHomeModelUpdated);
@@ -100,7 +104,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
 
         private AlexaEndpoint ParseControlToEndpoint(Control c)
         {
-            string uuid = c.LoxoneUuid.ToString();
+            string uuid = AlexaUuidTranslator.ToAlexaId(c.LoxoneUuid);
             if (c.Type == ControlType.LightControl)
             {
                 AlexaEndpoint ep = new AlexaEndpoint()
@@ -111,7 +115,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                     FriendlyName = c.FriendlyName,
                     AdditionalAttributes = GenerateBasicAdditionalAttributes(c),
                     DisplayCategories = new[] { "LIGHT" },
-                    Capabilities = new AlexaEndpointCapability[] { new PowerControllerCapability() },
+                    Capabilities = new AlexaEndpointCapability[] { new PowerControllerCapability(), new GenericAlexaCapability() },
                 };
                 AddOperationsToAdditionalAttributes(c.Operations, ep.AdditionalAttributes);
                 return ep;
@@ -126,12 +130,12 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                     FriendlyName = c.FriendlyName,
                     AdditionalAttributes = GenerateBasicAdditionalAttributes(c),
                     DisplayCategories = new[] { "LIGHT" },
-                    Capabilities = new AlexaEndpointCapability[] { new PowerLevelControllerCapability() },
+                    Capabilities = new AlexaEndpointCapability[] { new PowerLevelControllerCapability(), new GenericAlexaCapability() },
                 };
                 AddOperationsToAdditionalAttributes(c.Operations, ep.AdditionalAttributes);
                 return ep;
             }
-            else if (c.Type == ControlType.BlindControl)
+            /*else if (c.Type == ControlType.BlindControl)
             {
                 AlexaEndpoint ep = new AlexaEndpoint()
                 {
@@ -141,11 +145,11 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                     FriendlyName = c.FriendlyName,
                     AdditionalAttributes = GenerateBasicAdditionalAttributes(c),
                     DisplayCategories = new[] { "INTERIOR_BLIND" },
-                    Capabilities = new AlexaEndpointCapability[] { new ModeControllerCapabilityForBlinds(), new AlexaCapability() },
+                    Capabilities = new AlexaEndpointCapability[] { new ModeControllerCapabilityForBlinds(), new GenericAlexaCapability() },
                 };
                 AddOperationsToAdditionalAttributes(c.Operations, ep.AdditionalAttributes);
                 return ep;
-            }
+            }*/
             return null;
         }
 
