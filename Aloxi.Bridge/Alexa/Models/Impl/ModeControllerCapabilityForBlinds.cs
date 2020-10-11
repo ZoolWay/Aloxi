@@ -40,7 +40,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa.Models.Impl
                         {
                             FriendlyNames = new List<AlexaCapabilityFriendlyName>()
                             {
-                                new AlexaCapabilityFriendlyName("asset", "Alexa.Valu.Close"),
+                                new AlexaCapabilityFriendlyName("asset", "Alexa.Value.Close"),
                             },
                         },
                     },
