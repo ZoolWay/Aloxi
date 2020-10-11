@@ -4,7 +4,7 @@
 
 echo -e "\033[1;37mDeploying Aloxi.Bridge to the smartpi\033[0m"
 
-SMARTPI_IP="192.168.0.116"
+SMARTPI_IP="192.168.0.202"
 SMARTPI_USER="pi"
 PLATFORM="linux-arm"
 CONFIGURATION="Release"
