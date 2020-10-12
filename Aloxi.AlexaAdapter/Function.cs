@@ -45,6 +45,8 @@ namespace ZoolWay.Aloxi.AlexaAdapter
 
                 case "Alexa.Discovery":
                 case "Alexa.PowerController":
+                case "Alexa.PowerLevelController":
+                case "Alexa.ModeController":
                     processor = new AlexaPassthroughProcessor();
                     break;
 
