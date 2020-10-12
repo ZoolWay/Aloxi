@@ -71,7 +71,9 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
             }
             else
             {
-                SendResponseToAlexa(CreateError(request.Directive.Endpoint.EndpointId, AlexaErrorType.INVALID_DIRECTIVE, $"Adapter does not support directive namespace {request.Directive.Header.Namespace}"));
+                string msg = $"Adapter does not support directive namespace {request.Directive.Header.Namespace}";
+                log.Warning(msg);
+                SendResponseToAlexa(CreateError(request.Directive.Endpoint.EndpointId, AlexaErrorType.INVALID_DIRECTIVE, msg));
             }
         }
 
@@ -79,12 +81,13 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
         {
             string name = directive.Header.Name;
             string instance = directive.Header.Instance;
+            string targetMode = directive.Payload["mode"]?.ToString();
+            log.Info("Processing MopdeController request with name '{0}' for instance '{1}' targetting '{2}'", name, instance, targetMode);
 
             if (instance == "Blinds.BlindTargetState")
             {
                 if (name == "SetMode")
                 {
-                    string targetMode = directive.Payload["mode"].ToString();
                     LoxoneMessage.ControlBlinds.BlindCmd command = LoxoneMessage.ControlBlinds.BlindCmd.FullUp;
                     switch (targetMode)
                     {
@@ -111,6 +114,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
 
         private void ProcessPowerlevelController(string name, AlexaDirective directive)
         {
+            log.Info("Processing PowerlevelController request with name '{0}'", name);
             if (name == "SetPowerLevel")
             {
                 string targetPowerLevelProp = directive.Payload["powerLevel"].ToString();
@@ -136,6 +140,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
 
         private void ProcessPowerController(string name, AlexaDirective directive)
         {
+            log.Info("Processing PowerController request with name '{0}'", name);
             string targetValue = "";
             if (name == "TurnOn")
             {
@@ -216,6 +221,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
 
         private void ProcessDiscovery(string name, AlexaDirective directive)
         {
+            log.Info("Processing Discovery request with name '{0}'", name);
             if (name != "Discover")
             {
                 string message = $"Unknown discovery request '{name}'";
