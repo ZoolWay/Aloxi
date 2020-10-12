@@ -25,16 +25,19 @@ WantedBy=multi-user.target
 
 Load it with `sudo systemctl daemon-reload`
 
-Check status:
+Check **status**:
 `sudo systemctl status aloxi`
 
-Start:
-`sudo systemctl start aloxi.service`
+**Start** it:
+`sudo systemctl start aloxi`
 
-Enable with machine startup:
+**Stop** it:
+`sudo systemctl stop aloxi`
+
+**Enable** with machine startup:
 `sudo systemctl enable aloxi.service`
 
-Jounralctl
-`sudo journalctl -u aloxi`
+Show **log** with journalctl:
+`sudo journalctl -a -u aloxi`
 
 See <https://devblogs.microsoft.com/dotnet/net-core-and-systemd/>.
