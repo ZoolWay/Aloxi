@@ -35,7 +35,7 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
             log.Debug($"Dim '{message.LoxoneUuid}' {message.Type} to {message.Value}");
             if (message.Type != LoxoneMessage.ControlDimmer.DimType.Set) throw new NotSupportedException($"DimType {message.Type} not supported (yet)!");
             if ((message.Value < 0) || (message.Value > 100)) throw new ArgumentOutOfRangeException("Value", message.Value, "Valid percentage required");
-            var response = await RunLoxoneAsync($"dev/sps/io/{HttpUtility.UrlEncode(message.LoxoneUuid)}/{message.Value}%");
+            var response = await RunLoxoneAsync($"dev/sps/io/{HttpUtility.UrlEncode(message.LoxoneUuid.ToString())}/{message.Value}%");
         }
 
         private async Task ReceivedControlSwitch(LoxoneMessage.ControlSwitch message)

@@ -101,7 +101,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                             command = LoxoneMessage.ControlBlinds.BlindCmd.Stop;
                             break;
                     }
-                    this.loxoneDispatcher.Tell(new LoxoneMessage.ControlBlinds(directive.Endpoint.EndpointId, command));
+                    this.loxoneDispatcher.Tell(new LoxoneMessage.ControlBlinds(AlexaUuidTranslator.ToLoxoneUuid(directive.Endpoint.EndpointId), command));
                     var response = CreateResponse(directive.Header.CorrelationId, directive.Endpoint.EndpointId);
                     response.Context.Properties.Add(new AlexaProperty("Alexa.ModeController", "mode", targetMode, DateTime.Now));
                     SendResponseToAlexa(response);
@@ -121,7 +121,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                 bool valueParseable = Int32.TryParse(targetPowerLevelProp, out int targetPowerLevel);
 
 
-                this.loxoneDispatcher.Tell(new LoxoneMessage.ControlDimmer(directive.Endpoint.EndpointId, LoxoneMessage.ControlDimmer.DimType.Set, targetPowerLevel));
+                this.loxoneDispatcher.Tell(new LoxoneMessage.ControlDimmer(AlexaUuidTranslator.ToLoxoneUuid(directive.Endpoint.EndpointId), LoxoneMessage.ControlDimmer.DimType.Set, targetPowerLevel));
 
                 var response = CreateResponse(directive.Header.CorrelationId, directive.Endpoint.EndpointId);
                 response.Context.Properties.Add(new AlexaProperty("Alexa.PowerLevelController", "powerLevel", targetPowerLevelProp, DateTime.Now));

@@ -49,11 +49,11 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
         {
             public enum DimType { Set, Adjust };
 
-            public string LoxoneUuid { get; }
+            public LoxoneUuid LoxoneUuid { get; }
             public DimType Type { get; }
             public int Value { get; }
 
-            public ControlDimmer(string loxoneUuid, DimType dimType, int value)
+            public ControlDimmer(LoxoneUuid loxoneUuid, DimType dimType, int value)
             {
                 this.LoxoneUuid = loxoneUuid;
                 this.Type = dimType;
@@ -65,10 +65,10 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
         {
             public enum BlindCmd { FullUp, FullDown, Stop };
 
-            public string LoxoneUuid { get; }
+            public LoxoneUuid LoxoneUuid { get; }
             public BlindCmd Command { get; }
 
-            public ControlBlinds(string loxoneUuid, BlindCmd command)
+            public ControlBlinds(LoxoneUuid loxoneUuid, BlindCmd command)
             {
                 this.LoxoneUuid = loxoneUuid;
                 this.Command = command;
