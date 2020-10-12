@@ -130,7 +130,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                     FriendlyName = c.FriendlyName,
                     AdditionalAttributes = GenerateBasicAdditionalAttributes(c),
                     DisplayCategories = new[] { "LIGHT" },
-                    Capabilities = new AlexaEndpointCapability[] { new PowerLevelControllerCapability(), new GenericAlexaCapability() },
+                    Capabilities = new AlexaEndpointCapability[] { new PowerLevelControllerCapability(), new PowerControllerCapability(), new GenericAlexaCapability() },
                 };
                 AddOperationsToAdditionalAttributes(c.Operations, ep.AdditionalAttributes);
                 return ep;
