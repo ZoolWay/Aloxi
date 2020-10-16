@@ -1,5 +1,6 @@
 ﻿using System;
-using System.Text.Json.Serialization;
+
+using Newtonsoft.Json;
 
 namespace ZoolWay.Aloxi.Bridge.Alexa.Models
 {
@@ -26,7 +27,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa.Models
             }
         }
 
-        [JsonPropertyName("@type")]
+        [JsonProperty(PropertyName = "@type")]
         public string Type { get; set; }
         public string[] Actions { get; set; }
         public AmDirective Directive { get; set; }

@@ -143,7 +143,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                 AddOperationsToAdditionalAttributes(c.Operations, ep.AdditionalAttributes);
                 return ep;
             }
-            /*else if (c.Type == ControlType.BlindControl)
+            else if (c.Type == ControlType.BlindControl)
             {
                 AlexaEndpoint ep = new AlexaEndpoint()
                 {
@@ -157,7 +157,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                 };
                 AddOperationsToAdditionalAttributes(c.Operations, ep.AdditionalAttributes);
                 return ep;
-            }*/
+            }
             return null;
         }
 
