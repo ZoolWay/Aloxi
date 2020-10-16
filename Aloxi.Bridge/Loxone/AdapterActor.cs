@@ -60,7 +60,7 @@ namespace ZoolWay.Aloxi.Bridge.Loxone
             this.model = message.Model;
             this.modelUpdateTimestamp = message.UpdateTimestamp;
             Context.System.EventStream.Publish(new Bus.HomeModelUpdatedEvent(message.Model, message.UpdateTimestamp));
-            log.Info("Got model with {0} controls", this.model.Controls.Count);
+            log.Debug("Got model with {0} controls", this.model.Controls.Count);
         }
 
         private void ReceivedRequestModel(LoxoneMessage.RequestModel message)
