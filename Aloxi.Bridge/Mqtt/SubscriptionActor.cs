@@ -97,6 +97,7 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
 
         private void ReceivedReceived(MqttMessage.Received message)
         {
+            log.Debug($"Received a message on topic '{message.Topic}'");
             // deserialize
             AloxiMessage aloxiMessage;
             try
