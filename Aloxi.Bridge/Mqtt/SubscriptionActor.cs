@@ -144,21 +144,21 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
         {
             this.isSubscribed = true;
             Context.System.EventStream.Publish(new Bus.MqttConnectivityChangeEvent(this.client.IsConnected, this.isSubscribed, DateTime.Now));
-            this.manager.Tell(new MqttMessage.Log(LogLevel.DebugLevel, "Subscribed"));
+            log.Debug("Subscribed");
         }
 
         private void ReceivedStateUnsubscribed(MqttMessage.StateUnsubscribed message)
         {
             this.isSubscribed = false;
             Context.System.EventStream.Publish(new Bus.MqttConnectivityChangeEvent(this.client.IsConnected, this.isSubscribed, DateTime.Now));
-            this.manager.Tell(new MqttMessage.Log(LogLevel.DebugLevel, "Unsubscribed"));
+            log.Debug("Unsubscribed");
         }
 
         private void ReceivedStateConnectionClosed(MqttMessage.StateConnectionClosed message)
         {
             this.isSubscribed = false;
             Context.System.EventStream.Publish(new Bus.MqttConnectivityChangeEvent(false, this.isSubscribed, DateTime.Now));
-            this.manager.Tell(new MqttMessage.Log(LogLevel.InfoLevel, "Connection closed"));
+            log.Info("Connection closed");
         }
 
         private void ReceivedRequestState(MqttMessage.RequestState message)

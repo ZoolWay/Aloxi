@@ -22,7 +22,6 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
 
             Receive<MqttMessage.Publish>((msg) => this.subscriber.Forward(msg));
             Receive<MqttMessage.PublishAlexaResponse>((msg) => this.subscriber.Forward(msg));
-            Receive<MqttMessage.Log>(ReceivedLog);
             Receive<MqttMessage.RegisterProcessor>((msg) => this.subscriber.Forward(msg));
             Receive<MqttMessage.RequestState>((msg) => this.subscriber.Forward(msg));
         }
@@ -48,11 +47,6 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
         {
             this.subscriber = ActorRefs.Nobody;
             log.Info("Stopped");
-        }
-
-        private void ReceivedLog(MqttMessage.Log message)
-        {
-            log.Log(message.LogLevel, "{0}: {1}", Sender.Path.ToStringWithoutAddress(), message.Message);
         }
     }
 }

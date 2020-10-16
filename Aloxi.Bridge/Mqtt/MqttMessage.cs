@@ -10,18 +10,6 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
     [ImmutableObject(true)]
     internal abstract class MqttMessage
     {
-        public class Log : MqttMessage
-        {
-            public string Message { get; }
-            public LogLevel LogLevel { get; }
-
-            public Log(LogLevel logLevel,  string message)
-            {
-                this.LogLevel = logLevel;
-                this.Message = message;
-            }
-        }
-
         public class Received : MqttMessage
         {
             public ImmutableArray<byte> Message { get; }
