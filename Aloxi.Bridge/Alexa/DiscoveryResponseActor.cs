@@ -20,6 +20,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
         private readonly JsonSerializerSettings jsonSettings;
         private Home homeModel;
         private AlexaDiscoverResponsePayload cache;
+        private DateTime lastDayCacheinfoLogged;
 
         public DiscoveryResponseActor(IActorRef mqttDispatcher)
         {
@@ -28,6 +29,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                 ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver(),
                 NullValueHandling = NullValueHandling.Ignore,
             };
+            this.lastDayCacheinfoLogged = DateTime.MinValue;
             this.mqttDispatcher = mqttDispatcher;
             Receive<AlexaMessage.PublishDiscoveryResponse>(ReceivedPublishDiscoveryResponse);
             Receive<Bus.HomeModelUpdatedEvent>(ReceivedHomeModelUpdated);
@@ -93,7 +95,13 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                     }
                 }
                 this.cache = new AlexaDiscoverResponsePayload() { Endpoints = endpoints.ToArray() };
-                log.Info("Caching Alexa Discovery Response with {0} endpoints", this.cache.Endpoints.Length);
+                LogLevel cacheinfoLogLevel = LogLevel.DebugLevel;
+                if (this.lastDayCacheinfoLogged != DateTime.Today)
+                {
+                    cacheinfoLogLevel = LogLevel.InfoLevel;
+                    this.lastDayCacheinfoLogged = DateTime.Today;
+                }
+                log.Log(cacheinfoLogLevel, "Caching Alexa Discovery Response with {0} endpoints", this.cache.Endpoints.Length);
             }
             catch (Exception ex)
             {
