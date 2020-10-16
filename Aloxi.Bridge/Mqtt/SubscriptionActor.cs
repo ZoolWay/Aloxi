@@ -27,6 +27,7 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
         private readonly Dictionary<AloxiMessageOperation, List<IActorRef>> processors;
         private MqttClient client;
         private bool isSubscribed;
+        private ICancelable scheduledReconnect;
 
         public SubscriptionActor(IActorRef manager, MqttConfig mqttConfig, string topic, string alexaResponseTopic)
         {
@@ -48,21 +49,19 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
             Receive<MqttMessage.StateSubscribed>(ReceivedStateSubscribed);
             Receive<MqttMessage.StateUnsubscribed>(ReceivedStateUnsubscribed);
             Receive<MqttMessage.RequestState>(ReceivedRequestState);
+            Receive<MqttMessage.RequestConnect>(ReceivedConnect);
         }
 
         protected override void PreStart()
         {
-            log.Debug("Starting");
+            log.Debug("Starting, preparing MQTT client");
             IActorRef self = Self;
             this.client = MqttClientProvider.For(this.mqttConfig);
-            byte flag = this.client.Connect(this.mqttConfig.ClientId);
-            log.Info("Connected to MQTT bus with flag {0}", flag);
-            Context.System.EventStream.Publish(new Bus.MqttConnectivityChangeEvent(true, false, DateTime.Now));
             this.client.MqttMsgSubscribed += (sender, e) => self.Tell(new MqttMessage.StateSubscribed());
             this.client.MqttMsgUnsubscribed += (sender, e) => self.Tell(new MqttMessage.StateUnsubscribed());
             this.client.MqttMsgPublishReceived += (sender, e) => self.Tell(new MqttMessage.Received(e.Message, e.Topic, e.QosLevel, e.DupFlag, e.Retain));
             this.client.ConnectionClosed += (sender, e) => self.Tell(new MqttMessage.StateConnectionClosed());
-            this.client.Subscribe(new string[] { this.topic }, new byte[] { MqttMsgBase.QOS_LEVEL_AT_MOST_ONCE });
+            Self.Tell(new MqttMessage.RequestConnect());
         }
 
         protected override void PostStop()
@@ -80,6 +79,16 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
             log.Warning("Restarted because of: {0}", reason.Message);
             base.PostRestart(reason);
         }
+
+        private void ReceivedConnect(MqttMessage.RequestConnect message)
+        {
+            byte flag = this.client.Connect(this.mqttConfig.ClientId);
+            log.Info("Connected to MQTT bus with flag {0}", flag);
+            Context.System.EventStream.Publish(new Bus.MqttConnectivityChangeEvent(true, false, DateTime.Now));
+
+            this.client.Subscribe(new string[] { this.topic }, new byte[] { MqttMsgBase.QOS_LEVEL_AT_MOST_ONCE });
+        }
+
 
         private void ReceivedPublish(MqttMessage.Publish message)
         {
@@ -156,9 +165,13 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
 
         private void ReceivedStateConnectionClosed(MqttMessage.StateConnectionClosed message)
         {
+            log.Info("Connection closed");
             this.isSubscribed = false;
             Context.System.EventStream.Publish(new Bus.MqttConnectivityChangeEvent(false, this.isSubscribed, DateTime.Now));
-            log.Info("Connection closed");
+
+            TimeSpan reconnectIn = TimeSpan.FromMinutes(10);
+            Context.System.Scheduler.ScheduleTellOnceCancelable(reconnectIn, Self, new MqttMessage.RequestConnect(), Self);
+            log.Info("Scheduled re-connect in {0}", reconnectIn);
         }
 
         private void ReceivedRequestState(MqttMessage.RequestState message)

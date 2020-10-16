@@ -84,6 +84,10 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
         {
         }
 
+        public class RequestConnect : MqttMessage
+        {
+        }
+
         public class StateConnectionClosed : MqttMessage
         {
         }
