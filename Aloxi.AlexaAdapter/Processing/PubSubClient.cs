@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
@@ -18,8 +17,9 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
 {
     internal class PubSubClient
     {
-        private const int MAX_RESPONSE_WAIT_MS = 1500;
-        private const int MAX_RESPONSE_RESETEVENT_WAIT_MS = MAX_RESPONSE_WAIT_MS * 2;
+        private const int MAX_WAIT_FOR_PUBLISH = 2000;
+        private const int MAX_WAIT_FOR_RESPONSE = 2000;
+        private const int MAX_WAIT_FOR_RESPONSE_TIMEOUT = 2500;
         private static readonly int BROKER_PORT = 8883;
         private static readonly Encoding ENCODING = Encoding.UTF8;
         private static readonly JsonSerializer jsonSerializer = JsonSerializer.CreateDefault(jsonSettings);
@@ -73,44 +73,49 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
         {
             if (String.IsNullOrWhiteSpace(message.ResponseTopic)) throw new Exception("ResponseTopic is required for PublishAndAwaitResponse");
 
+            ManualResetEvent msePublished = new ManualResetEvent(false);
             string responseTopic = message.ResponseTopic;
 
             // start "listen" task
-            Log.Debug(this.lambdaContext, "Starting ListenTask");
-            Task<AloxiMessage> listenTask = Task<AloxiMessage>.Run<AloxiMessage>(() =>
+            Log.Debug(this.lambdaContext, "PSC/PAAR: Starting request-response task");
+            Task<AloxiMessage> requestReponseTask = Task<AloxiMessage>.Run<AloxiMessage>(() =>
             {
-                ManualResetEvent manualResetEvent = new ManualResetEvent(false);
+                ManualResetEvent mseReceived = new ManualResetEvent(false);
                 AloxiMessage responseData = null;
 
                 var subClient = CreateClient();
-                Log.Debug(this.lambdaContext, "PSC/PAAR/Listen: ListenTask got client and connected");
+                Log.Debug(this.lambdaContext, "PSC/PAAR/RRT: RequestResponseTask got client and connected");
                 subClient.MqttMsgSubscribed += (sender, e) =>
                 {
-                    Log.Debug(this.lambdaContext, "PSC/PAAR/Listen: subscribed");
+                    Log.Debug(this.lambdaContext, "PSC/PAAR/RRT: subscribed, sending request");
+                    var publishFlag = subClient.Publish(toTopic, translateToBytes(message));
+                    msePublished.Set();
+                    Log.Debug(this.lambdaContext, $"PSC/PAAR/RRT: published to topic '{toTopic}', return flag = {publishFlag}");
                 };
                 subClient.MqttMsgPublishReceived += (sender, e) =>
                 {
-                    Log.Debug(this.lambdaContext, "PSC/PAAR/Listen: received");
+                    Log.Debug(this.lambdaContext, "PSC/PAAR/RRT: received message");
                     try
                     {
                         AloxiMessage m = translateFromBytes(e.Message);
                         if (m.Type != AloxiMessageType.AloxiComm) return;
                         responseData = m;
-                        manualResetEvent.Set();
-                        Log.Debug(this.lambdaContext, "PSC/PAAR/Listen: manual reset event completed");
+                        mseReceived.Set();
+                        Log.Debug(this.lambdaContext, "PSC/PAAR/RRT: manual reset event completed");
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(this.lambdaContext, $"PSC/PAAR/Listen: Received message could not be processed: {ex.Message}"); // ignore message
+                        Log.Error(this.lambdaContext, $"PSC/PAAR/RRT: received message could not be processed: {ex.Message}"); // ignore message
                     }
                 };
                 var subscribeFlag = subClient.Subscribe(new string[] { responseTopic }, new byte[] { MqttMsgBase.QOS_LEVEL_AT_MOST_ONCE });
-                Log.Debug(this.lambdaContext, $"PSC/PAAR/Listen: Subscribed response topic '{responseTopic}', return flag = {subscribeFlag}");
+                Log.Debug(this.lambdaContext, $"PSC/PAAR/RRT: subscribed response topic '{responseTopic}', return flag = {subscribeFlag}");
                 bool? receivedSignal = null;
                 try
                 {
-                    receivedSignal = manualResetEvent.WaitOne(MAX_RESPONSE_RESETEVENT_WAIT_MS);
-                    if (!receivedSignal.Value) Log.Error(this.lambdaContext, $"PSC/PAAR/Listen: Did not get response within {MAX_RESPONSE_WAIT_MS}ms (expected on topic {responseTopic})");
+                    // TODO wait for subscription confirmation
+                    receivedSignal = mseReceived.WaitOne(MAX_WAIT_FOR_RESPONSE);
+                    if (!receivedSignal.Value) Log.Error(this.lambdaContext, $"PSC/PAAR/RRT: did not get response within {MAX_WAIT_FOR_RESPONSE}ms (expected on topic {responseTopic})");
                 }
                 catch (Exception ex)
                 {
@@ -121,36 +126,29 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
                     subClient.Disconnect();
                 }
 
-                Log.Debug(this.lambdaContext, $"PSC/PAAR/Listen: Returning from ListenTask, receivedSignal={receivedSignal}, data type={responseData?.GetType().FullName}.");
+                Log.Debug(this.lambdaContext, $"PSC/PAAR/RRT: Returning from RequestSponseTask, receivedSignal={receivedSignal}, data type={responseData?.GetType().FullName}.");
                 return responseData;
             });
 
-            // publish message (using seperate client)
-            Log.Debug(this.lambdaContext, "Creating client");
-            var pubClient = CreateClient();
-            Log.Debug(this.lambdaContext, "PSC/PAAR: PublishingTask got client and connected");
-            var publishFlag = pubClient.Publish(toTopic, translateToBytes(message));
-            Log.Debug(this.lambdaContext, $"PSC/PAAR: Published to topic '{toTopic}', return flag = {publishFlag}");
-
             // wait for listen to complete or timing out
-            Task waitingTask = Task.Delay(MAX_RESPONSE_WAIT_MS);
-            Log.Debug(this.lambdaContext, $"PSC/PAAR: Task id #{waitingTask.Id} is waiting task, task id #{listenTask.Id} is listen task");
-            Task completedTask = await Task.WhenAny(listenTask, waitingTask);
+            Task waitingTask = Task.Delay(MAX_WAIT_FOR_RESPONSE + MAX_WAIT_FOR_PUBLISH);
+            Log.Debug(this.lambdaContext, $"PSC/PAAR: Task id #{waitingTask.Id} is waiting task, task id #{requestReponseTask.Id} is request-response task");
+            Task completedTask = await Task.WhenAny(requestReponseTask, waitingTask);
             string taskname = "unknown";
-            if (Object.ReferenceEquals(completedTask, listenTask)) taskname = "LISTEN";
+            if (Object.ReferenceEquals(completedTask, requestReponseTask)) taskname = "REQ-RESP";
             if (Object.ReferenceEquals(completedTask, waitingTask)) taskname = "WAITING";
             Log.Debug(this.lambdaContext, $"PSC/PAAR: A task completed, id #{completedTask.Id}, is {taskname}");
-            if (Object.ReferenceEquals(completedTask, listenTask))
+            if (Object.ReferenceEquals(completedTask, requestReponseTask))
             {
-                if (listenTask.Result == null)
+                if (requestReponseTask.Result == null)
                 {
                     Log.Warn(this.lambdaContext, $"PSC/PAAR: Returning NULL as the listenTask returned it!");
                     return null;
                 }
                 else
                 {
-                    Log.Debug(this.lambdaContext, $"PSC/PAAR: Returning data from listenTask is of type {listenTask.Result?.GetType().FullName}");
-                    return listenTask.Result;
+                    Log.Debug(this.lambdaContext, $"PSC/PAAR: Returning data from listenTask is of type {requestReponseTask.Result?.GetType().FullName}");
+                    return requestReponseTask.Result;
                 }
             }
             Log.Warn(this.lambdaContext, $"PSC/PAAR: Returning NULL as we got not answer in time!");
@@ -246,6 +244,5 @@ namespace ZoolWay.Aloxi.AlexaAdapter.Processing
             string serialized = ENCODING.GetString(data);
             return JsonConvert.DeserializeObject<AloxiMessage>(serialized, jsonSettings);
         }
-
     }
 }
