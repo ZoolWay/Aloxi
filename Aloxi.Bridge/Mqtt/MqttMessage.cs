@@ -113,5 +113,9 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
                 this.Timestamp = timestamp;
             }
         }
+
+        public class EstablishSubscription : MqttMessage
+        {
+        }
     }
 }

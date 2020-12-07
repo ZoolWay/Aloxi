@@ -31,6 +31,7 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
 
         public SubscriptionActor(IActorRef manager, MqttConfig mqttConfig, string topic, string alexaResponseTopic)
         {
+            log.Info("Creating...");
             this.jsonSettings = new JsonSerializerSettings() { ContractResolver = new CamelCasePropertyNamesContractResolver() };
             this.jsonSerializer = JsonSerializer.CreateDefault(jsonSettings);
             this.jsonEncoding = Encoding.UTF8;
@@ -72,6 +73,12 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
                 this.client = null;
             }
             log.Debug("Stopped");
+        }
+
+        protected override void PreRestart(Exception reason, object message)
+        {
+            log.Error("Restart required, exception occured: {0}", reason.Message);
+            base.PreRestart(reason, message);
         }
 
         protected override void PostRestart(Exception reason)
