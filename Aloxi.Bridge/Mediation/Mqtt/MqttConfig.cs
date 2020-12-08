@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 
-namespace ZoolWay.Aloxi.Bridge.Mqtt
+namespace ZoolWay.Aloxi.Bridge.Mediation.Mqtt
 {
     [ImmutableObject(true)]
     public class MqttConfig

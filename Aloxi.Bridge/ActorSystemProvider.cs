@@ -2,14 +2,17 @@
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+
 using Akka.Actor;
 using Akka.Configuration;
 using Akka.Logger.Extensions.Logging;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+
 using ZoolWay.Aloxi.Bridge.Loxone;
+using ZoolWay.Aloxi.Bridge.Mediation;
 using ZoolWay.Aloxi.Bridge.Meta;
-using ZoolWay.Aloxi.Bridge.Mqtt;
 
 namespace ZoolWay.Aloxi.Bridge
 {
@@ -18,7 +21,7 @@ namespace ZoolWay.Aloxi.Bridge
         private readonly IConfiguration configuration;
         private readonly ILogger<ActorSystemProvider> log;
         private ActorSystem actorSystem;
-        private IActorRef mqttManager;
+        private IActorRef mediator;
         private IActorRef metaProcessor;
         private IActorRef loxoneAdapter;
         private IActorRef alexaAdapter;
@@ -33,11 +36,6 @@ namespace ZoolWay.Aloxi.Bridge
             }
         }
 
-        public IActorRef MqttManager
-        {
-            get => this.mqttManager;
-        }
-
         public IActorRef LoxoneAdapter
         {
             get => this.loxoneAdapter;
@@ -48,17 +46,21 @@ namespace ZoolWay.Aloxi.Bridge
             get => this.statusConsolidator;
         }
 
+        public IActorRef Mediator
+        {
+            get => this.mediator;
+        }
+
         public ActorSystemProvider(IConfiguration configuration, ILogger<ActorSystemProvider> log, ILoggerFactory loggerFactory)
         {
             this.configuration = configuration;
             this.log = log;
             this.actorSystem = null;
-            this.mqttManager = ActorRefs.Nobody;
             this.metaProcessor = ActorRefs.Nobody;
             this.loxoneAdapter = ActorRefs.Nobody;
             this.alexaAdapter = ActorRefs.Nobody;
             this.statusConsolidator = ActorRefs.Nobody;
-
+            this.mediator = ActorRefs.Nobody;
             LoggingLogger.LoggerFactory = loggerFactory;
         }
 
@@ -69,24 +71,13 @@ namespace ZoolWay.Aloxi.Bridge
             string configurationData = File.ReadAllText(configurationFile);
             Config akkaConfig = ConfigurationFactory.ParseString(configurationData);
             this.actorSystem = ActorSystem.Create("aloxi-bridge", akkaConfig);
-            
-            // build MQTT
-            this.mqttManager = ActorRefs.Nobody;
-            try
-            {
-                var c = configuration.GetSection("Mqtt");
-                var mqttConfig = new Mqtt.MqttConfig(c["Endpoint"], c["CaPath"], c["CertPath"], c["ClientId"]);
-                string subscriptionTopic = c["SubscriptionTopic"];
-                string alexaResponseTopic = c["AlexaResponseTopic"];
-                this.mqttManager = this.actorSystem.ActorOf(Props.Create(() => new Mqtt.ManagerActor(mqttConfig, subscriptionTopic, alexaResponseTopic)), "mqtt");
-            }
-            catch (Exception ex)
-            {
-                log.LogError(ex, "Initializing of MQTT node failed");
-            }
+
+            // build mediator system
+            var mediationConfig = configuration.GetSection("Mediation");
+            this.mediator = this.actorSystem.ActorOf(Props.Create(() => new Mediation.MediatorActor(mediationConfig)), "mediation");
 
             // build meta
-            this.metaProcessor = this.actorSystem.ActorOf(Props.Create(() => new Meta.MetaProcessorActor(this.mqttManager)), "meta");
+            this.metaProcessor = this.actorSystem.ActorOf(Props.Create(() => new Meta.MetaProcessorActor(this.mediator)), "meta");
 
             // build Loxone
             this.loxoneAdapter = ActorRefs.Nobody;
@@ -107,7 +98,7 @@ namespace ZoolWay.Aloxi.Bridge
             this.alexaAdapter = ActorRefs.Nobody;
             try
             {
-                this.alexaAdapter = this.actorSystem.ActorOf(Props.Create(() => new Alexa.AdapterActor(this.mqttManager, this.loxoneAdapter)),  "alexa");
+                this.alexaAdapter = this.actorSystem.ActorOf(Props.Create(() => new Alexa.AdapterActor(this.mediator, this.loxoneAdapter)),  "alexa");
             }
             catch (Exception ex)
             {
@@ -115,12 +106,12 @@ namespace ZoolWay.Aloxi.Bridge
             }
 
             // init and configuration
-            this.mqttManager.Tell(new MqttMessage.RegisterProcessor(Models.AloxiMessageOperation.Echo, this.metaProcessor));
-            this.mqttManager.Tell(new MqttMessage.RegisterProcessor(Models.AloxiMessageOperation.PipeAlexaRequest, this.alexaAdapter));
+            this.mediator.Tell(new MediationMessage.RegisterProcessor(Models.AloxiMessageOperation.Echo, this.metaProcessor));
+            this.mediator.Tell(new MediationMessage.RegisterProcessor(Models.AloxiMessageOperation.PipeAlexaRequest, this.alexaAdapter));
             this.loxoneAdapter.Tell(new LoxoneMessage.InitAdapter());
 
             // status consolidator
-            this.statusConsolidator = this.actorSystem.ActorOf(Props.Create(() => new StatusConsolidatorActor(this.loxoneAdapter, this.mqttManager)));
+            this.statusConsolidator = this.actorSystem.ActorOf(Props.Create(() => new StatusConsolidatorActor(this.loxoneAdapter, this.mediator)));
         }
     }
 }

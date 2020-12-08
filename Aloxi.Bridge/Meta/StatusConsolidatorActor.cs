@@ -5,8 +5,8 @@ using Akka.Event;
 
 using ZoolWay.Aloxi.Bridge.Bus;
 using ZoolWay.Aloxi.Bridge.Loxone;
+using ZoolWay.Aloxi.Bridge.Mediation;
 using ZoolWay.Aloxi.Bridge.Models;
-using ZoolWay.Aloxi.Bridge.Mqtt;
 
 namespace ZoolWay.Aloxi.Bridge.Meta
 {
@@ -14,7 +14,7 @@ namespace ZoolWay.Aloxi.Bridge.Meta
     {
         private readonly ILoggingAdapter log = Context.GetLogger();
         private readonly IActorRef loxoneAdapter;
-        private readonly IActorRef mqttManager;
+        private readonly IActorRef mediator;
         private bool receivedModel;
         private bool receivedMqtt;
         private bool receivedLoxone;
@@ -26,10 +26,10 @@ namespace ZoolWay.Aloxi.Bridge.Meta
         private bool isMiniserverAvailable;
         private DateTime miniserverUpdate;
 
-        public StatusConsolidatorActor(IActorRef loxoneAdapter, IActorRef mqttManager)
+        public StatusConsolidatorActor(IActorRef loxoneAdapter, IActorRef mediator)
         {
             this.loxoneAdapter = loxoneAdapter;
-            this.mqttManager = mqttManager;
+            this.mediator = mediator;
 
             this.receivedModel = false;
             this.receivedMqtt = false;
@@ -40,14 +40,14 @@ namespace ZoolWay.Aloxi.Bridge.Meta
             Receive<Bus.LoxoneConnectivityChangeEvent>(ReceivedLoxoneConnectivityChange);
             Receive<StatusMessage.Request>(ReceivedStatusRequest);
             Receive<LoxoneMessage.PublishModel>(ReceivedPublishModel);
-            Receive<MqttMessage.CurrentState>(ReceivedCurrentMqttState);
+            Receive<MediationMessage.CurrentState>(ReceivedCurrentMqttState);
             Receive<StatusMessage.Init>(ReceivedInit);
         }
 
         private void ReceivedInit(StatusMessage.Init message)
         {
             this.loxoneAdapter.Tell(new LoxoneMessage.RequestModel());
-            this.mqttManager.Tell(new MqttMessage.RequestState());
+            this.mediator.Tell(new MediationMessage.RequestState());
         }
 
         protected override void PreStart()
@@ -97,7 +97,7 @@ namespace ZoolWay.Aloxi.Bridge.Meta
             this.mqttUpdate = message.UpdateTimestamp;
         }
 
-        private void ReceivedCurrentMqttState(MqttMessage.CurrentState message)
+        private void ReceivedCurrentMqttState(MediationMessage.CurrentState message)
         {
             if (this.receivedMqtt) return; // ignore pull if we already got data
             this.receivedMqtt = true;

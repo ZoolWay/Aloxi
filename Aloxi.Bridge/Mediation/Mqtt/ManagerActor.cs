@@ -5,15 +5,15 @@ using Akka.Actor;
 using Akka.Event;
 using Akka.Pattern;
 
-namespace ZoolWay.Aloxi.Bridge.Mqtt
+namespace ZoolWay.Aloxi.Bridge.Mediation.Mqtt
 {
     public class ManagerActor : ReceiveActor
     {
-        private readonly ILoggingAdapter log = Logging.GetLogger(Context);
+        private readonly ILoggingAdapter log = Context.GetLogger();
         private readonly string subscriptionTopic;
         private readonly string alexaResponseTopic;
         private readonly MqttConfig mqttConfig;
-        private readonly List<MqttMessage> registeredProcessors;
+        private readonly List<MediationMessage> registeredProcessors;
         private IActorRef subscriber;
 
         public ManagerActor(MqttConfig mqttConfig, string subscriptionTopic, string alexaResponseTopic)
@@ -22,12 +22,12 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
             this.alexaResponseTopic = alexaResponseTopic;
             this.mqttConfig = mqttConfig;
             this.subscriber = ActorRefs.Nobody;
-            this.registeredProcessors = new List<MqttMessage>();
+            this.registeredProcessors = new List<MediationMessage>();
 
-            Receive<MqttMessage.Publish>(ForwardToSubscriptionActor);
-            Receive<MqttMessage.PublishAlexaResponse>(ForwardToSubscriptionActor);
-            Receive<MqttMessage.RegisterProcessor>(ReceivedRegisterProcessor);
-            Receive<MqttMessage.RequestState>(ForwardToSubscriptionActor);
+            Receive<MediationMessage.Publish>(ForwardToSubscriptionActor);
+            Receive<MediationMessage.PublishAlexaResponse>(ForwardToSubscriptionActor);
+            Receive<MediationMessage.RegisterProcessor>(ReceivedRegisterProcessor);
+            Receive<MediationMessage.RequestState>(ForwardToSubscriptionActor);
             Receive<MqttMessage.EstablishSubscription>(ReceivedEstablishSubscription);
             Receive<Terminated>(ReceivedSubscriberTerminated);
         }
@@ -79,7 +79,7 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
             Context.System.Scheduler.ScheduleTellOnce(TimeSpan.FromMinutes(15), Self, new MqttMessage.EstablishSubscription(), Self);
         }
 
-        private void ReceivedRegisterProcessor(MqttMessage.RegisterProcessor message)
+        private void ReceivedRegisterProcessor(MediationMessage.RegisterProcessor message)
         {
             log.Info($"Registering processor for op '{message.Operation}': {message.Processor.Path.ToStringWithoutAddress()}");
             this.registeredProcessors.Add(message);
@@ -89,7 +89,7 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
             }
         }
 
-        private void ForwardToSubscriptionActor(MqttMessage message)
+        private void ForwardToSubscriptionActor(MediationMessage message)
         {
             if (this.subscriber.IsNobody())
             {

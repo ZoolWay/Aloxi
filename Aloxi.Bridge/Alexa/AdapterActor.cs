@@ -1,12 +1,15 @@
 ﻿using System;
+
 using Akka.Actor;
 using Akka.Event;
+
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+
 using ZoolWay.Aloxi.Bridge.Alexa.Models;
 using ZoolWay.Aloxi.Bridge.Loxone;
+using ZoolWay.Aloxi.Bridge.Mediation;
 using ZoolWay.Aloxi.Bridge.Models;
-using ZoolWay.Aloxi.Bridge.Mqtt;
 
 namespace ZoolWay.Aloxi.Bridge.Alexa
 {
@@ -18,13 +21,13 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
         private const string NS_MODECONTROL = "Alexa.ModeController";
         private readonly ILoggingAdapter log = Logging.GetLogger(Context);
         private readonly JsonSerializerSettings jsonSettings;
-        private readonly IActorRef mqttDispatcher;
+        private readonly IActorRef mediationDispatcher;
         private readonly IActorRef loxoneDispatcher;
         private IActorRef discoveryResponseHandler;
 
-        public AdapterActor(IActorRef mqttDispatcher, IActorRef loxoneDispatcher)
+        public AdapterActor(IActorRef mediationDispatcher, IActorRef loxoneDispatcher)
         {
-            this.mqttDispatcher = mqttDispatcher;
+            this.mediationDispatcher = mediationDispatcher;
             this.loxoneDispatcher = loxoneDispatcher;
             this.jsonSettings = new JsonSerializerSettings()
             {
@@ -32,12 +35,12 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
                 NullValueHandling = NullValueHandling.Ignore,
             };
             this.discoveryResponseHandler = ActorRefs.Nobody;
-            Receive<MqttMessage.Process>(ReceivedProcess);
+            Receive<MediationMessage.Process>(ReceivedProcess);
         }
 
         protected override void PreStart()
         {
-            this.discoveryResponseHandler = Context.ActorOf(Props.Create(() => new DiscoveryResponseActor(this.mqttDispatcher)), "discovery-response-handler");
+            this.discoveryResponseHandler = Context.ActorOf(Props.Create(() => new DiscoveryResponseActor(this.mediationDispatcher)), "discovery-response-handler");
         }
 
         protected override void PostStop()
@@ -45,7 +48,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
             this.discoveryResponseHandler = ActorRefs.Nobody;
         }
 
-        private void ReceivedProcess(MqttMessage.Process message)
+        private void ReceivedProcess(MediationMessage.Process message)
         {
             if (message.Operation != AloxiMessageOperation.PipeAlexaRequest)
             {
@@ -216,7 +219,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
 
         private void SendResponseToAlexa(object response)
         {
-            this.mqttDispatcher.Tell(new Mqtt.MqttMessage.PublishAlexaResponse(JsonConvert.SerializeObject(response, this.jsonSettings)));
+            this.mediationDispatcher.Tell(new MediationMessage.PublishAlexaResponse(JsonConvert.SerializeObject(response, this.jsonSettings)));
         }
 
         private void ProcessDiscovery(string name, AlexaDirective directive)

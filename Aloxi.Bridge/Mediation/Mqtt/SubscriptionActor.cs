@@ -2,20 +2,24 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+
 using Akka.Actor;
 using Akka.Event;
+
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
+
 using uPLibrary.Networking.M2Mqtt;
 using uPLibrary.Networking.M2Mqtt.Messages;
+
 using ZoolWay.Aloxi.Bridge.Models;
 
-namespace ZoolWay.Aloxi.Bridge.Mqtt
+namespace ZoolWay.Aloxi.Bridge.Mediation.Mqtt
 {
     public class SubscriptionActor : ReceiveActor
     {
-        private readonly ILoggingAdapter log = Logging.GetLogger(Context);
+        private readonly ILoggingAdapter log = Context.GetLogger();
         private readonly JsonSerializer jsonSerializer;
         private readonly JsonSerializerSettings jsonSettings;
         private readonly JsonLoadSettings jsonLoadSettings;
@@ -42,15 +46,15 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
             this.processors = new Dictionary<AloxiMessageOperation, List<IActorRef>>();
             this.isSubscribed = false;
 
-            Receive<MqttMessage.Received>(ReceivedReceived);
-            Receive<MqttMessage.Publish>(ReceivedPublish);
-            Receive<MqttMessage.PublishAlexaResponse>(ReceivedPublishAlexaResponse);
-            Receive<MqttMessage.RegisterProcessor>(ReceivedRegisterProcessor);
-            Receive<MqttMessage.StateConnectionClosed>(ReceivedStateConnectionClosed);
-            Receive<MqttMessage.StateSubscribed>(ReceivedStateSubscribed);
-            Receive<MqttMessage.StateUnsubscribed>(ReceivedStateUnsubscribed);
-            Receive<MqttMessage.RequestState>(ReceivedRequestState);
-            Receive<MqttMessage.RequestConnect>(ReceivedConnect);
+            Receive<MediationMessage.Received>(ReceivedReceived);
+            Receive<MediationMessage.Publish>(ReceivedPublish);
+            Receive<MediationMessage.PublishAlexaResponse>(ReceivedPublishAlexaResponse);
+            Receive<MediationMessage.RegisterProcessor>(ReceivedRegisterProcessor);
+            Receive<MediationMessage.StateConnectionClosed>(ReceivedStateConnectionClosed);
+            Receive<MediationMessage.StateSubscribed>(ReceivedStateSubscribed);
+            Receive<MediationMessage.StateUnsubscribed>(ReceivedStateUnsubscribed);
+            Receive<MediationMessage.RequestState>(ReceivedRequestState);
+            Receive<MediationMessage.RequestConnect>(ReceivedConnect);
         }
 
         protected override void PreStart()
@@ -58,11 +62,11 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
             log.Debug("Starting, preparing MQTT client");
             IActorRef self = Self;
             this.client = MqttClientProvider.For(this.mqttConfig);
-            this.client.MqttMsgSubscribed += (sender, e) => self.Tell(new MqttMessage.StateSubscribed());
-            this.client.MqttMsgUnsubscribed += (sender, e) => self.Tell(new MqttMessage.StateUnsubscribed());
-            this.client.MqttMsgPublishReceived += (sender, e) => self.Tell(new MqttMessage.Received(e.Message, e.Topic, e.QosLevel, e.DupFlag, e.Retain));
-            this.client.ConnectionClosed += (sender, e) => self.Tell(new MqttMessage.StateConnectionClosed());
-            Self.Tell(new MqttMessage.RequestConnect());
+            this.client.MqttMsgSubscribed += (sender, e) => self.Tell(new MediationMessage.StateSubscribed());
+            this.client.MqttMsgUnsubscribed += (sender, e) => self.Tell(new MediationMessage.StateUnsubscribed());
+            this.client.MqttMsgPublishReceived += (sender, e) => self.Tell(new MediationMessage.Received(e.Message, e.Topic, e.QosLevel, e.DupFlag, e.Retain));
+            this.client.ConnectionClosed += (sender, e) => self.Tell(new MediationMessage.StateConnectionClosed());
+            Self.Tell(new MediationMessage.RequestConnect());
         }
 
         protected override void PostStop()
@@ -87,7 +91,7 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
             base.PostRestart(reason);
         }
 
-        private void ReceivedConnect(MqttMessage.RequestConnect message)
+        private void ReceivedConnect(MediationMessage.RequestConnect message)
         {
             byte flag = this.client.Connect(this.mqttConfig.ClientId);
             log.Info("Connected to MQTT bus with flag {0}", flag);
@@ -97,28 +101,28 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
         }
 
 
-        private void ReceivedPublish(MqttMessage.Publish message)
+        private void ReceivedPublish(MediationMessage.Publish message)
         {
             JObject payload = StringToJObject(message.Payload);
             var aloxiMessage = AloxiMessage.Build(message.Operation, payload, message.ResponseTopic);
             PublishAloxiMessage(aloxiMessage, message.Topic);
         }
 
-        private void ReceivedPublishAlexaResponse(MqttMessage.PublishAlexaResponse message)
+        private void ReceivedPublishAlexaResponse(MediationMessage.PublishAlexaResponse message)
         {
             JObject payload = StringToJObject(message.SerializedResponse);
             var aloxiMessage = AloxiMessage.Build(AloxiMessageOperation.PipeAlexaResponse, payload);
             PublishAloxiMessage(aloxiMessage, this.alexaResponseTopic);
         }
 
-        private void ReceivedReceived(MqttMessage.Received message)
+        private void ReceivedReceived(MediationMessage.Received message)
         {
             log.Debug($"Received a message on topic '{message.Topic}'");
             // deserialize
             AloxiMessage aloxiMessage;
             try
             {
-                string data = this.jsonEncoding.GetString(message.Message.ToArray<byte>());
+                string data = this.jsonEncoding.GetString(message.Message.ToArray());
                 aloxiMessage = JsonConvert.DeserializeObject<AloxiMessage>(data, this.jsonSettings);
             }
             catch (Exception ex)
@@ -143,11 +147,11 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
             string payload = JsonConvert.SerializeObject(aloxiMessage.Data, this.jsonSettings);
             foreach (IActorRef processor in this.processors[aloxiMessage.Operation])
             {
-                processor.Tell(new MqttMessage.Process(aloxiMessage.Operation, payload, aloxiMessage.ResponseTopic));
+                processor.Tell(new MediationMessage.Process(aloxiMessage.Operation, payload, aloxiMessage.ResponseTopic));
             }
         }
 
-        private void ReceivedRegisterProcessor(MqttMessage.RegisterProcessor message)
+        private void ReceivedRegisterProcessor(MediationMessage.RegisterProcessor message)
         {
             if (!this.processors.ContainsKey(message.Operation))
             {
@@ -156,34 +160,34 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
             this.processors[message.Operation].Add(message.Processor);
         }
 
-        private void ReceivedStateSubscribed(MqttMessage.StateSubscribed message)
+        private void ReceivedStateSubscribed(MediationMessage.StateSubscribed message)
         {
             this.isSubscribed = true;
             Context.System.EventStream.Publish(new Bus.MqttConnectivityChangeEvent(this.client.IsConnected, this.isSubscribed, DateTime.Now));
             log.Debug("Subscribed");
         }
 
-        private void ReceivedStateUnsubscribed(MqttMessage.StateUnsubscribed message)
+        private void ReceivedStateUnsubscribed(MediationMessage.StateUnsubscribed message)
         {
             this.isSubscribed = false;
             Context.System.EventStream.Publish(new Bus.MqttConnectivityChangeEvent(this.client.IsConnected, this.isSubscribed, DateTime.Now));
             log.Debug("Unsubscribed");
         }
 
-        private void ReceivedStateConnectionClosed(MqttMessage.StateConnectionClosed message)
+        private void ReceivedStateConnectionClosed(MediationMessage.StateConnectionClosed message)
         {
             log.Info("Connection closed");
             this.isSubscribed = false;
             Context.System.EventStream.Publish(new Bus.MqttConnectivityChangeEvent(false, this.isSubscribed, DateTime.Now));
 
             TimeSpan reconnectIn = TimeSpan.FromMinutes(10);
-            Context.System.Scheduler.ScheduleTellOnceCancelable(reconnectIn, Self, new MqttMessage.RequestConnect(), Self);
+            Context.System.Scheduler.ScheduleTellOnceCancelable(reconnectIn, Self, new MediationMessage.RequestConnect(), Self);
             log.Info("Scheduled re-connect in {0}", reconnectIn);
         }
 
-        private void ReceivedRequestState(MqttMessage.RequestState message)
+        private void ReceivedRequestState(MediationMessage.RequestState message)
         {
-            Sender.Tell(new MqttMessage.CurrentState(this.client.IsConnected, this.isSubscribed, DateTime.Now));
+            Sender.Tell(new MediationMessage.CurrentState(this.client.IsConnected, this.isSubscribed, DateTime.Now));
         }
 
         private void PublishAloxiMessage(AloxiMessage aloxiMessage, string topic)

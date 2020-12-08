@@ -2,9 +2,10 @@
 using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
+
 using uPLibrary.Networking.M2Mqtt;
 
-namespace ZoolWay.Aloxi.Bridge.Mqtt
+namespace ZoolWay.Aloxi.Bridge.Mediation.Mqtt
 {
     internal static class MqttClientProvider
     {
@@ -12,7 +13,7 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
 
         public static MqttClient For(MqttConfig mqttConfig)
         {
-            if (String.IsNullOrWhiteSpace(mqttConfig.CaCertPath)) return ConstructClientDirectlyInAws(mqttConfig.Endpoint);
+            if (string.IsNullOrWhiteSpace(mqttConfig.CaCertPath)) return ConstructClientDirectlyInAws(mqttConfig.Endpoint);
             return ConstructClientBasedOnCertificate(mqttConfig.Endpoint, mqttConfig.CaCertPath, mqttConfig.ClientCertPath);
         }
 
@@ -37,7 +38,7 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
             }
             Trace.WriteLine($"Creating MQTT client with certificate from {Path.GetDirectoryName(certPath)}");
             X509Certificate caCert = X509Certificate.CreateFromCertFile(caPath);
-            X509Certificate2 clientCert = new X509Certificate2(certPath, (String)null, X509KeyStorageFlags.Exportable);
+            X509Certificate2 clientCert = new X509Certificate2(certPath, (string)null, X509KeyStorageFlags.Exportable);
             return new MqttClient(endpoint, BROKER_PORT, true, caCert, clientCert, MqttSslProtocols.TLSv1_2);
         }
 

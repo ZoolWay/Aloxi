@@ -3,12 +3,16 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
+
 using Akka.Actor;
 using Akka.Event;
+
 using Newtonsoft.Json;
+
 using ZoolWay.Aloxi.Bridge.Alexa.Models;
 using ZoolWay.Aloxi.Bridge.Alexa.Models.Impl;
 using ZoolWay.Aloxi.Bridge.Loxone;
+using ZoolWay.Aloxi.Bridge.Mediation;
 using ZoolWay.Aloxi.Bridge.Models;
 
 namespace ZoolWay.Aloxi.Bridge.Alexa
@@ -70,7 +74,7 @@ namespace ZoolWay.Aloxi.Bridge.Alexa
             {
                 Event = responseEvent,
             };
-            this.mqttDispatcher.Tell(new Mqtt.MqttMessage.PublishAlexaResponse(JsonConvert.SerializeObject(response, this.jsonSettings)));
+            this.mqttDispatcher.Tell(new MediationMessage.PublishAlexaResponse(JsonConvert.SerializeObject(response, this.jsonSettings)));
         }
 
         private void ReceivedHomeModelUpdated(Bus.HomeModelUpdatedEvent message)

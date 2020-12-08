@@ -1,8 +1,10 @@
 ﻿using System;
+
 using Akka.Actor;
 using Akka.Event;
+
+using ZoolWay.Aloxi.Bridge.Mediation;
 using ZoolWay.Aloxi.Bridge.Models;
-using ZoolWay.Aloxi.Bridge.Mqtt;
 
 namespace ZoolWay.Aloxi.Bridge.Meta
 {
@@ -14,14 +16,14 @@ namespace ZoolWay.Aloxi.Bridge.Meta
         public MetaProcessorActor(IActorRef publisher)
         {
             this.publisher = publisher;
-            Receive<MqttMessage.Process>(ReceivedProcess);
+            Receive<MediationMessage.Process>(ReceivedProcess);
         }
 
-        private void ReceivedProcess(MqttMessage.Process message)
+        private void ReceivedProcess(MediationMessage.Process message)
         {
             if (message.Operation == AloxiMessageOperation.Echo)
             {
-                this.publisher.Tell(new MqttMessage.Publish(message.ResponseTopic, AloxiMessageOperation.EchoResponse, message.Payload));
+                this.publisher.Tell(new MediationMessage.Publish(message.ResponseTopic, AloxiMessageOperation.EchoResponse, message.Payload));
             }
         }
     }

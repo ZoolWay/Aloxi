@@ -1,16 +1,17 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.ComponentModel;
+
 using Akka.Actor;
-using Akka.Event;
+
 using ZoolWay.Aloxi.Bridge.Models;
 
-namespace ZoolWay.Aloxi.Bridge.Mqtt
+namespace ZoolWay.Aloxi.Bridge.Mediation
 {
     [ImmutableObject(true)]
-    internal abstract class MqttMessage
+    internal abstract class MediationMessage
     {
-        public class Received : MqttMessage
+        public class Received : MediationMessage
         {
             public ImmutableArray<byte> Message { get; }
             public string Topic { get; }
@@ -20,7 +21,7 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
 
             public Received(byte[] message, string topic, byte qosLevel, bool dupFlag, bool retain)
             {
-                this.Message = message.ToImmutableArray<byte>();
+                this.Message = message.ToImmutableArray();
                 this.Topic = topic;
                 this.QosLevel = qosLevel;
                 this.DupFlag = dupFlag;
@@ -28,7 +29,7 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
             }
         }
 
-        public class RegisterProcessor : MqttMessage
+        public class RegisterProcessor : MediationMessage
         {
             public AloxiMessageOperation Operation { get; }
             public IActorRef Processor { get; }
@@ -40,7 +41,7 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
             }
         }
 
-        public class Process : MqttMessage
+        public class Process : MediationMessage
         {
             public AloxiMessageOperation Operation { get; }
             public string Payload { get; }
@@ -54,7 +55,7 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
             }
         }
 
-        public class Publish : MqttMessage
+        public class Publish : MediationMessage
         {
             public string Topic { get; }
             public AloxiMessageOperation Operation { get; }
@@ -70,7 +71,7 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
             }
         }
 
-        public class PublishAlexaResponse : MqttMessage
+        public class PublishAlexaResponse : MediationMessage
         {
             public string SerializedResponse { get; }
 
@@ -80,27 +81,27 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
             }
         }
 
-        public class RequestState : MqttMessage
+        public class RequestState : MediationMessage
         {
         }
 
-        public class RequestConnect : MqttMessage
+        public class RequestConnect : MediationMessage
         {
         }
 
-        public class StateConnectionClosed : MqttMessage
+        public class StateConnectionClosed : MediationMessage
         {
         }
 
-        public class StateSubscribed : MqttMessage
+        public class StateSubscribed : MediationMessage
         {
         }
 
-        public class StateUnsubscribed : MqttMessage
+        public class StateUnsubscribed : MediationMessage
         {
         }
 
-        public class CurrentState : MqttMessage
+        public class CurrentState : MediationMessage
         {
             public bool IsConnected { get; }
             public bool IsSubscribed { get; }
@@ -112,10 +113,6 @@ namespace ZoolWay.Aloxi.Bridge.Mqtt
                 this.IsSubscribed = isSubscribed;
                 this.Timestamp = timestamp;
             }
-        }
-
-        public class EstablishSubscription : MqttMessage
-        {
         }
     }
 }
