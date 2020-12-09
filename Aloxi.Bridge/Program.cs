@@ -1,5 +1,6 @@
 using System;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -19,6 +20,15 @@ namespace ZoolWay.Aloxi.Bridge
                 {
                     services.AddSingleton<ActorSystemProvider>();
                     services.AddHostedService<Worker>();
+                    var mc = Mediation.MediationConfigBuilder.From(hostContext.Configuration.GetSection("Mediation"));
+                    if (mc.ActiveClients.Contains(Mediation.MediationClientType.SignalR))
+                    {
+                        var sr = services.AddSignalR();
+                        sr.AddHubOptions<Mediation.SignalR.AloxiHub>(c =>
+                        {
+                        });
+                        sr.AddAzureSignalR(mc.SignalR.ConnectionString);
+                    }
                 })
                 .ConfigureWebHostDefaults((webBuilder) =>
                 {
